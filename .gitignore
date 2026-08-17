@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Environment & IDE
+.env
+.vscode/
+.idea/
+
+# Logs & OS metadata
+*.log
+Thumbs.db
+.DS_Store
