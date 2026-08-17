@@ -1,102 +1,110 @@
-# Zero-Knowledge Collaborative Web Application Firewall (WAF)
+# NexusShield - Zero-Knowledge Collaborative Web Application Firewall (WAF) & SOC Dashboard
 
-A Hub-and-Spoke collaborative security network. When one connected web application detects an attack (such as SQL Injection), it immediately blocks the offending IP locally and reports it to a central Hub. All other connected applications periodically synchronize with the Hub to download updated global blocklists, achieving real-time collective immunity.
+A Hub-and-Spoke collaborative security network paired with a modern, dark-themed **Security Operations Center (SOC)** Dashboard. When one connected web application detects an attack (such as SQL Injection, XSS, or Path Traversal), it immediately blocks the offending IP locally and reports it to a central Hub. All connected applications synchronize every 10 seconds to download updated global blocklists, achieving real-time collective immunity.
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-                      +-------------------+
-                      |   Central Hub     |
-                      |  (FastAPI: 8000)  |
-                      +---------+---------+
-                                ^
-               Report Attack    |    Get Blocklist
-                  (Async POST)  |    (GET /blocklist every 10s)
-                                |
-             +------------------+------------------+
-             |                                     |
-             v                                     v
-   +-------------------+                 +-------------------+
-   |   Site A (Spoke)  |                 |   Site B (Spoke)  |
-   | (Express: 3000)   |                 | (Express: 3001)   |
-   +-------------------+                 +-------------------+
+                                +-------------------+
+                                |   Central Hub     |
+                                |  (FastAPI: 8000)  |
+                                +---------+---------+
+                                          |
+            +-----------------------------+-----------------------------+
+            |                             |                             |
+            v (Async POST / Report)       v (GET /stats & /blocklist)   v (GET /blocklist every 10s)
+  +-------------------+         +-------------------+         +-------------------+
+  |   Site A (Spoke)  |         |   SOC Dashboard   |         |   Site B (Spoke)  |
+  | (Express: 3000)   |         |   (React: 5173)   |         | (Express: 3001)   |
+  +-------------------+         +-------------------+         +-------------------+
 ```
 
 1. **Central Hub (FastAPI - Port 8000)**:
-   - Stores global blocklist in an in-memory `set()` to prevent duplicate IPs.
-   - `POST /report`: Accepts attack reports (`ip_address`, `attack_type`).
-   - `GET /blocklist`: Serves the list of globally blocked IP addresses.
+   - Stores global blocklist & live attack events log.
+   - `POST /report`: Accepts threat reports (`ip_address`, `attack_type`, `node`).
+   - `GET /blocklist`: Serves enriched global blocklist metadata.
+   - `GET /stats`: Computes aggregated metrics, attack vector distribution, and time-series analytics.
+   - `DELETE /unban/{ip}`: Revokes IP bans from the global blocklist.
 
-2. **Spoke Client (Express.js Middleware - Ports 3000 & 3001)**:
-   - Intercepts incoming HTTP requests.
-   - Checks normalized IP (`127.0.0.1`, `::1`, `::ffff:127.0.0.1`) against local blocklist (`403 Forbidden` if blocked).
-   - Inspects URL string for SQL Injection signatures (`' OR 1=1`, `UNION SELECT`, etc.).
-   - On attack detection: local block + async report to Hub + `403 Forbidden`.
+2. **SOC Dashboard (React + Vite + Tailwind CSS - Port 5173)**:
+   - **Top Metrics Bar (KPI Cards)**: Total Blocked IPs, Attacks Deflected, Active Spokes, and Network Health status.
+   - **Real-Time Threat Stream**: Dark cyber terminal live event log.
+   - **Analytics & Visualizations**: Recharts Donut Chart (Attack Distribution) and Area Chart (24h Trend).
+   - **Global Blocklist Management Table**: Live search filter, status badges, and inline `Unban / Revoke` button.
+   - **Spoke Simulator Widget**: Modal widget to trigger test attacks and observe real-time dashboard updates.
+   - **Background Polling & Fallback**: 3-second automatic polling loop with graceful offline fallback state.
+
+3. **Spoke Client (Express.js Middleware - Ports 3000 & 3001)**:
+   - Intercepts incoming HTTP requests and normalizes client IP addresses.
+   - Inspects URL string for SQL Injection signatures.
    - Runs `setInterval` loop every 10 seconds to sync global blocklist from Hub.
 
-3. **Attack Simulator (Python Script)**:
-   - Sends SQL Injection payload to Site A (`http://127.0.0.1:3000/search?q=' OR 1=1`). Verifies `403 Forbidden`.
-   - Waits 12 seconds for Site B to run its sync loop.
-   - Sends a normal GET request to Site B (`http://127.0.0.1:3001/`). Verifies Site B returns `403 Forbidden`.
+4. **Attack Simulator (`attack.py`)**:
+   - Python automated test script executing cross-spoke collaborative blocking verification.
 
 ---
 
-## 📦 Requirements & Installation
+## 📦 Installation
 
-### 1. Install Node.js Dependencies
+### 1. Install Root Dependencies (Express Spokes & Python Hub)
 ```bash
 npm install
+pip install -r requirements.txt
 ```
 
-### 2. Install Python Dependencies
+### 2. Install SOC Dashboard Dependencies
 ```bash
-pip install -r requirements.txt
+cd dashboard
+npm install
+cd ..
 ```
 
 ---
 
 ## 🚀 Running the Project
 
-Run each service in a separate terminal window:
+Open 4 separate terminal windows:
 
 ### Terminal 1: Central Hub (FastAPI - Port 8000)
 ```bash
 python hub/main.py
 ```
-*(Or `uvicorn hub.main:app --port 8000 --reload`)*
 
 ### Terminal 2: Site A (Express Spoke - Port 3000)
 ```bash
-# On Windows PowerShell:
+# Windows PowerShell:
 $env:PORT=3000; $env:SITE_NAME="Site-A"; node spoke/server.js
 
-# On Windows Command Prompt (cmd):
+# Windows CMD:
 set PORT=3000&& set SITE_NAME=Site-A&& node spoke/server.js
 ```
 
 ### Terminal 3: Site B (Express Spoke - Port 3001)
 ```bash
-# On Windows PowerShell:
+# Windows PowerShell:
 $env:PORT=3001; $env:SITE_NAME="Site-B"; node spoke/server.js
 
-# On Windows Command Prompt (cmd):
+# Windows CMD:
 set PORT=3001&& set SITE_NAME=Site-B&& node spoke/server.js
 ```
 
+### Terminal 4: SOC Dashboard Frontend (React/Vite - Port 5173)
+```bash
+cd dashboard
+npx vite
+```
+Open **`http://localhost:5173`** in your web browser.
+
 ---
 
-## 🧪 Running the Attack Simulation
+## 🧪 Testing Collaborative Immunity
 
-Once all 3 servers are running, open a **4th terminal window** and run:
+### Option A: Via Dashboard Attack Simulator
+Click the **"Attack Simulator"** button in the dashboard top navigation bar to fire test attacks directly from the UI.
 
+### Option B: Via Python CLI Simulator
 ```bash
 python attack.py
 ```
-
-### Expected Output Trace:
-1. **Site A Attack**: `GET http://127.0.0.1:3000/search?q=' OR 1=1` -> `403 Forbidden`
-2. **Hub Verification**: `GET http://127.0.0.1:8000/blocklist` -> `["127.0.0.1"]`
-3. **Sync Waiting**: 12-second wait loop allowing Site B to update its local memory.
-4. **Site B Check**: `GET http://127.0.0.1:3001/` -> `403 Forbidden` (Site B blocks clean request because IP was globally reported!).

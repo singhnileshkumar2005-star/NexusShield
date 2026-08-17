@@ -38,7 +38,10 @@ async function fetchGlobalBlocklist() {
   try {
     const response = await axios.get(`${HUB_URL}/blocklist`, { timeout: 3000 });
     if (response.data && Array.isArray(response.data.blocked_ips)) {
-      const serverBlocklist = response.data.blocked_ips.map(normalizeIP);
+      const serverBlocklist = response.data.blocked_ips.map(item => {
+        const rawIp = typeof item === 'object' && item !== null ? item.ip : item;
+        return normalizeIP(rawIp);
+      });
       
       let newAddedCount = 0;
       for (const ip of serverBlocklist) {
