@@ -1,15 +1,36 @@
 from fastapi import FastAPI, HTTPException, Path
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Set, List, Optional
+from typing import Optional, List, Dict
+from datetime import datetime
+import sqlite3
+import os
 import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("NexusShield-Hub")
 
-app = FastAPI(title="NexusShield Threat Hub")
+DB_FILE = os.path.join(os.path.dirname(__file__), "nexus.db")
 
-# Task 1.1: Enable CORS allowing all origins, methods, and headers
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS blocks (
+            ip TEXT PRIMARY KEY,
+            attack_type TEXT,
+            timestamp DATETIME
+        )
+    """)
+    conn.commit()
+    conn.close()
+    logger.info(f"[Database] SQLite database initialized at {DB_FILE}")
+
+# Initialize SQLite database on startup
+init_db()
+
+app = FastAPI(title="NexusShield Threat Hub (SQLite Persistence)")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,78 +39,134 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory storage for blocked IPs
-blocked_ips: Set[str] = set()
-
 class ReportPayload(BaseModel):
     ip_address: str
     attack_type: Optional[str] = "SQL Injection"
     node: Optional[str] = "Site-A"
 
+def get_db_connection():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 @app.get("/")
 def read_root():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(ip) FROM blocks")
+    total = cursor.fetchone()[0]
+    conn.close()
     return {
-        "service": "NexusShield Threat Hub",
+        "service": "NexusShield Threat Hub (SQLite)",
         "status": "online",
-        "total_blocked": len(blocked_ips)
+        "total_blocked": total
     }
 
+# Task 1.3: Update POST /report
 @app.post("/report")
 def report_attack(payload: ReportPayload):
     ip = payload.ip_address.strip()
     if not ip:
         raise HTTPException(status_code=400, detail="Invalid IP address")
     
-    is_new = ip not in blocked_ips
-    blocked_ips.add(ip)
+    attack_type = payload.attack_type or "SQL Injection"
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
     
-    if is_new:
-        logger.warning(f"[NEW THREAT REPORTED] IP: {ip} | Type: {payload.attack_type}")
+    # INSERT OR IGNORE to prevent duplicate primary key crashes
+    cursor.execute("""
+        INSERT OR IGNORE INTO blocks (ip, attack_type, timestamp)
+        VALUES (?, ?, ?)
+    """, (ip, attack_type, now_str))
     
+    conn.commit()
+    
+    cursor.execute("SELECT COUNT(ip) FROM blocks")
+    total = cursor.fetchone()[0]
+    conn.close()
+
+    logger.warning(f"[NEW THREAT REPORTED] IP: {ip} | Type: {attack_type}")
+
     return {
         "status": "success",
-        "message": f"IP {ip} added to global blocklist",
-        "total_blocked": len(blocked_ips)
+        "message": f"IP {ip} registered in global blocklist",
+        "total_blocked": total
     }
 
+# Task 1.4: Update GET /blocklist
 @app.get("/blocklist")
 def get_blocklist():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT ip, attack_type, timestamp FROM blocks ORDER BY rowid DESC")
+    rows = cursor.fetchall()
+    conn.close()
+
+    items = [
+        {
+            "ip": row["ip"],
+            "attack_type": row["attack_type"],
+            "timestamp": row["timestamp"]
+        }
+        for row in rows
+    ]
+    
     return {
-        "blocked_ips": list(blocked_ips)
+        "blocked_ips": items
     }
 
-# Task 1.2: GET /stats
+# Task 1.5: Update GET /stats
 @app.get("/stats")
 def get_stats():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(ip) FROM blocks")
+    total = cursor.fetchone()[0]
+    conn.close()
+    
     return {
-        "total_blocked": len(blocked_ips),
+        "total_blocked": total,
         "active_spokes": 2
     }
 
-# Task 1.3: DELETE /unban/{ip}
+# Task 1.6: Update DELETE /unban/{ip}
 @app.delete("/unban/{ip_address}")
 def unban_ip(ip_address: str = Path(..., description="The IP address to unban")):
     ip = ip_address.strip()
-    if ip in blocked_ips:
-        blocked_ips.remove(ip)
-        logger.info(f"[UNBANNED] IP {ip} unbanned from global blocklist.")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM blocks WHERE ip = ?", (ip,))
+    deleted = cursor.rowcount
+    conn.commit()
+    
+    cursor.execute("SELECT COUNT(ip) FROM blocks")
+    total = cursor.fetchone()[0]
+    conn.close()
+
+    if deleted > 0:
+        logger.info(f"[UNBANNED] IP {ip} unbanned from SQLite database.")
         return {
             "status": "success",
             "message": f"IP {ip} successfully unbanned",
-            "total_blocked": len(blocked_ips)
+            "total_blocked": total
         }
     else:
-        # If IP is not found in set, return success or 404
         return {
             "status": "success",
             "message": f"IP {ip} was not in blocklist",
-            "total_blocked": len(blocked_ips)
+            "total_blocked": total
         }
 
 @app.post("/clear")
 def clear_blocklist():
-    blocked_ips.clear()
-    logger.info("Global blocklist cleared")
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM blocks")
+    conn.commit()
+    conn.close()
+    logger.info("SQLite blocklist database cleared")
     return {"status": "cleared", "total_blocked": 0}
 
 if __name__ == "__main__":
