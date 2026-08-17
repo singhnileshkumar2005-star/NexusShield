@@ -9,6 +9,7 @@ logger = logging.getLogger("NexusShield-Hub")
 
 app = FastAPI(title="NexusShield Threat Hub")
 
+# Task 1.1: Enable CORS allowing all origins, methods, and headers
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# In-memory storage for blocked IPs
 blocked_ips: Set[str] = set()
 
 class ReportPayload(BaseModel):
@@ -56,6 +58,7 @@ def get_blocklist():
         "blocked_ips": list(blocked_ips)
     }
 
+# Task 1.2: GET /stats
 @app.get("/stats")
 def get_stats():
     return {
@@ -63,6 +66,7 @@ def get_stats():
         "active_spokes": 2
     }
 
+# Task 1.3: DELETE /unban/{ip}
 @app.delete("/unban/{ip_address}")
 def unban_ip(ip_address: str = Path(..., description="The IP address to unban")):
     ip = ip_address.strip()
@@ -75,6 +79,7 @@ def unban_ip(ip_address: str = Path(..., description="The IP address to unban"))
             "total_blocked": len(blocked_ips)
         }
     else:
+        # If IP is not found in set, return success or 404
         return {
             "status": "success",
             "message": f"IP {ip} was not in blocklist",
