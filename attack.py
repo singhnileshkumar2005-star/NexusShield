@@ -2,111 +2,69 @@ import time
 import sys
 import requests
 
-# Reconfigure stdout to handle UTF-8 symbols on Windows consoles
+# Ensure UTF-8 output encoding on Windows consoles
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-SITE_A_URL = "http://127.0.0.1:3000"
-SITE_B_URL = "http://127.0.0.1:3001"
+SITE_A_URL = "http://localhost:3000"
+SITE_B_URL = "http://localhost:3001"
 HUB_URL = "http://127.0.0.1:8000"
 
-def print_header(title):
-    print("\n" + "=" * 60)
-    print(f" [*] {title}")
-    print("=" * 60)
-
-
 def main():
-    print_header("Zero-Knowledge Collaborative WAF Attack Simulator")
+    print("\n" + "=" * 65)
+    print(" 🚀 NexusShield Zero-Knowledge Collaborative WAF Verification")
+    print("=" * 65)
 
-    # Step 0: Ensure Hub & Spokes are reachability check
-    print("📋 Checking server availability...")
+    # Pre-check Hub health
     try:
-        r_hub = requests.get(f"{HUB_URL}/blocklist", timeout=3)
-        print(f"  [✓] Central Hub (Port 8000) is online. Initial blocklist: {r_hub.json().get('blocked_ips', [])}")
+        # Clear Hub state before starting test for clean reproducible run
+        requests.post(f"{HUB_URL}/clear", timeout=3)
+        print("[Pre-Check] FastAPI Hub is online. Global blocklist reset for test.")
     except Exception as e:
-        print(f"  [❌] Cannot connect to Hub on {HUB_URL}: {e}")
-        print("      Please make sure main.py is running on port 8000.")
+        print(f"[Error] Cannot connect to FastAPI Hub on {HUB_URL}: {e}")
+        print("        Ensure python hub/main.py is running on port 8000.")
         sys.exit(1)
 
-    try:
-        r_site_a = requests.get(f"{SITE_A_URL}/", timeout=3)
-        print(f"  [✓] Site A (Port 3000) is online.")
-    except Exception as e:
-        print(f"  [❌] Cannot connect to Site A on {SITE_A_URL}: {e}")
-        print("      Please make sure Site A is running on port 3000.")
-        sys.exit(1)
+    # Step 1: Clean request to Site A
+    print("\n--- STEP 1: Sending Clean Request to Site A (Port 3000) ---")
+    url_step1 = f"{SITE_A_URL}/"
+    print(f"GET {url_step1}")
+    res1 = requests.get(url_step1)
+    print(f"Status Code: {res1.status_code}")
+    print(f"Response: {res1.text}")
+    assert res1.status_code == 200, f"Expected 200 OK, got {res1.status_code}"
+    print("✅ PASS: Clean request to Site A allowed (200 OK)")
 
-    try:
-        r_site_b = requests.get(f"{SITE_B_URL}/", timeout=3)
-        print(f"  [✓] Site B (Port 3001) is online.")
-    except Exception as e:
-        print(f"  [❌] Cannot connect to Site B on {SITE_B_URL}: {e}")
-        print("      Please make sure Site B is running on port 3001.")
-        sys.exit(1)
+    # Step 2: Malicious request with SQL Injection to Site A
+    print("\n--- STEP 2: Sending Malicious Request to Site A (Port 3000) ---")
+    url_step2 = f"{SITE_A_URL}/?search=' OR 1=1--"
+    print(f"GET {url_step2}")
+    res2 = requests.get(url_step2)
+    print(f"Status Code: {res2.status_code}")
+    print(f"Response: {res2.text}")
+    assert res2.status_code == 403, f"Expected 403 Forbidden, got {res2.status_code}"
+    print("✅ PASS: Site A intercepted SQL Injection and returned 403 Forbidden")
 
-    # Step 1: Send SQL Injection payload to Site A
-    print_header("STEP 1: Attacking Site A (Port 3000)")
-    sqli_url = f"{SITE_A_URL}/search?q=' OR 1=1"
-    print(f"🎯 Sending malicious request: GET {sqli_url}")
-    
-    try:
-        response_a = requests.get(sqli_url)
-        print(f"📥 Response Code: {response_a.status_code}")
-        print(f"📄 Response Body: {response_a.text}")
-
-        if response_a.status_code == 403:
-            print("✅ SUCCESS: Site A detected SQL Injection and returned 403 Forbidden!")
-        else:
-            print(f"❌ FAILURE: Expected 403 Forbidden, but received {response_a.status_code}")
-            sys.exit(1)
-    except Exception as e:
-        print(f"❌ Error attacking Site A: {e}")
-        sys.exit(1)
-
-    # Step 2: Verify Hub received report
-    print_header("STEP 2: Verifying Hub Blocklist")
-    time.sleep(1) # short pause for async POST to hit Hub
-    try:
-        hub_res = requests.get(f"{HUB_URL}/blocklist")
-        blocked_list = hub_res.json().get("blocked_ips", [])
-        print(f"🌐 Hub Global Blocklist: {blocked_list}")
-        if len(blocked_list) > 0:
-            print("✅ SUCCESS: Attacker IP reported and stored in Hub global blocklist!")
-        else:
-            print("⚠️ WARNING: Hub blocklist is empty. Async report may still be in flight.")
-    except Exception as e:
-        print(f"❌ Error checking Hub blocklist: {e}")
-
-    # Step 3: Wait for periodic sync
-    print_header("STEP 3: Waiting for Site B Sync Loop (12 seconds)")
-    print("⏳ Waiting 12 seconds to allow Site B's 10-second sync loop to fetch the blocklist...")
-    for i in range(12, 0, -1):
-        print(f"   Syncing in {i} seconds...", end="\r")
+    # Step 3: Wait 6 seconds for background sync
+    print("\n--- STEP 3: Waiting 6 seconds for Hub-to-Client Background Sync ---")
+    for i in range(6, 0, -1):
+        print(f"  Syncing... {i} seconds remaining", end="\r")
         time.sleep(1)
     print("\n⌛ Sync period complete!")
 
-    # Step 4: Send clean request to Site B
-    print_header("STEP 4: Requesting Clean Page on Site B (Port 3001)")
-    print(f"🎯 Sending normal GET request to Site B: GET {SITE_B_URL}/")
-    try:
-        response_b = requests.get(f"{SITE_B_URL}/")
-        print(f"📥 Response Code: {response_b.status_code}")
-        print(f"📄 Response Body: {response_b.text}")
-
-        if response_b.status_code == 403:
-            print("\n" + "🎉" * 25)
-            print("✨ COLLABORATIVE PROTECTION VERIFIED!")
-            print("✅ Site B successfully blocked the IP (403 Forbidden) based on shared intelligence from Site A!")
-            print("🎉" * 25)
-        else:
-            print(f"❌ FAILURE: Site B returned {response_b.status_code} instead of 403 Forbidden.")
-            print("    Check if the sync loop updated Site B's local blocklist.")
-            sys.exit(1)
-
-    except Exception as e:
-        print(f"❌ Error connecting to Site B: {e}")
-        sys.exit(1)
+    # Step 4 & 5: Clean request to Site B (Port 3001) -> Expect 403 Forbidden
+    print("\n--- STEP 4 & 5: Sending Clean Request to Site B (Port 3001) ---")
+    url_step4 = f"{SITE_B_URL}/"
+    print(f"GET {url_step4}")
+    res4 = requests.get(url_step4)
+    print(f"Status Code: {res4.status_code}")
+    print(f"Response: {res4.text}")
+    
+    assert res4.status_code == 403, f"Expected 403 Forbidden on Site B, got {res4.status_code}"
+    print("\n" + "*" * 65)
+    print("🎉 VERIFICATION SUCCESSFUL!")
+    print("✅ Site B automatically blocked IP (403 Forbidden) based on threat report from Site A!")
+    print("*" * 65 + "\n")
 
 if __name__ == "__main__":
     main()

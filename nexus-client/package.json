@@ -1,0 +1,14 @@
+{
+  "name": "nexus-client",
+  "version": "1.0.0",
+  "description": "NexusShield Client Package and Protected Sites",
+  "main": "middleware.js",
+  "scripts": {
+    "start:siteA": "node siteA.js",
+    "start:siteB": "node siteB.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "express": "^4.19.2"
+  }
+}
