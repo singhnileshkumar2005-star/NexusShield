@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.set('trust proxy', true);
-app.use(threatShield);
+app.use(threatShield({ clientId: 'client_A' }));
 
 app.get('/', (req, res) => {
   res.send("Welcome to Protected Site A");

@@ -68,10 +68,11 @@ if (syncInterval.unref) {
 /**
  * Asynchronously sends threat report to FastAPI Hub
  */
-async function reportThreat(ipAddress, attackType) {
+async function reportThreat(ipAddress, attackType, clientId = 'default') {
   try {
     await axios.post(`${HUB_URL}/report`, {
       ip_address: ipAddress,
+      client_id: clientId,
       attack_type: attackType
     }, { timeout: 3000 });
   } catch (error) {
@@ -102,34 +103,56 @@ function detectThreatVector(urlStr) {
 }
 
 /**
- * Express Middleware Function (threatShield)
+ * Creates ThreatShield Middleware instance configured for a specific clientId
  */
-function threatShield(req, res, next) {
-  const rawIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const clientIp = normalizeIP(rawIp);
-
-  // Defense Rule A: Global Blocklist Enforcement
-  if (blockedIPs.has(clientIp)) {
-    return res.status(403).send("403 Forbidden: IP Globally Banned by NexusShield");
+function createThreatShieldMiddleware(config = {}) {
+  let clientId = 'default';
+  if (typeof config === 'string') {
+    clientId = config;
+  } else if (config && config.clientId) {
+    clientId = config.clientId;
   }
 
-  // Defense Rule B: Payload Detection & Threat Classification
-  const requestUrl = req.originalUrl || req.url || '';
-  const threatType = detectThreatVector(requestUrl);
+  return function threatShieldHandler(req, res, next) {
+    const rawIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const clientIp = normalizeIP(rawIp);
 
-  if (threatType) {
-    // Immediately add to local blocklist
-    blockedIPs.add(clientIp);
+    // Defense Rule A: Global Blocklist Enforcement
+    if (blockedIPs.has(clientIp)) {
+      return res.status(403).send("403 Forbidden: IP Globally Banned by NexusShield");
+    }
 
-    // Asynchronously report to Hub
-    reportThreat(clientIp, threatType).catch(() => {});
+    // Defense Rule B: Payload Detection & Threat Classification
+    const requestUrl = req.originalUrl || req.url || '';
+    const threatType = detectThreatVector(requestUrl);
 
-    // Terminate connection with 403 Forbidden
-    return res.status(403).send("403 Forbidden: Malicious Payload Detected");
+    if (threatType) {
+      // Immediately add to local blocklist
+      blockedIPs.add(clientIp);
+
+      // Asynchronously report to Hub with client_id
+      reportThreat(clientIp, threatType, clientId).catch(() => {});
+
+      // Terminate connection with 403 Forbidden
+      return res.status(403).send("403 Forbidden: Malicious Payload Detected");
+    }
+
+    // Pass-through if clean and unbanned
+    next();
+  };
+}
+
+/**
+ * Express Middleware Export supporting both factory config:
+ *   threatShield({ clientId: 'client_A' })
+ * and direct middleware use:
+ *   threatShield(req, res, next)
+ */
+function threatShield(optionsOrReq, res, next) {
+  if (optionsOrReq && optionsOrReq.headers && typeof next === 'function') {
+    return createThreatShieldMiddleware({ clientId: 'default' })(optionsOrReq, res, next);
   }
-
-  // Pass-through if clean and unbanned
-  next();
+  return createThreatShieldMiddleware(optionsOrReq);
 }
 
 module.exports = threatShield;

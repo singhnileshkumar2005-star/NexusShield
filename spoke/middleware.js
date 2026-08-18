@@ -64,6 +64,7 @@ async function reportAttackToHub(ipAddress, attackType) {
   try {
     await axios.post(`${HUB_URL}/report`, {
       ip_address: ipAddress,
+      client_id: 'spoke',
       attack_type: attackType
     }, { timeout: 3000 });
     console.log(`[WAF Report] Successfully reported ${ipAddress} (${attackType}) to Hub.`);
