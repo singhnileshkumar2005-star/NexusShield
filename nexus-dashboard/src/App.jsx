@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { ShieldAlert, Server, Activity, ShieldCheck, UserX, RefreshCw, Flame, Radio } from 'lucide-react';
+import { ShieldAlert, Server, Activity, ShieldCheck, UserX, RefreshCw, Flame, Users, LayoutDashboard } from 'lucide-react';
+import ClientPortal from './ClientPortal';
 
 const HUB_URL = 'https://nexusshield.onrender.com';
 
 export default function App() {
+  const [currentView, setCurrentView] = useState('admin'); // 'admin' | 'client'
   const [blockedIps, setBlockedIps] = useState([]);
   const [stats, setStats] = useState({ total_blocked: 0, active_spokes: 2 });
   const [isOnline, setIsOnline] = useState(true);
   const [isUnbanning, setIsUnbanning] = useState(null);
 
-  // Task 3.1: Fetch stats and blocklist from FastAPI Hub
+  // Fetch stats and blocklist from FastAPI Hub for Admin SOC
   const fetchData = useCallback(async () => {
     try {
       const [blocklistRes, statsRes] = await Promise.all([
@@ -19,19 +21,20 @@ export default function App() {
       ]);
 
       if (blocklistRes.data && Array.isArray(blocklistRes.data.blocked_ips)) {
-        // Handle both string arrays and enriched metadata arrays
         const normalized = blocklistRes.data.blocked_ips.map((item, idx) => {
           if (typeof item === 'object' && item !== null) {
             return {
               ip: item.ip || item.ip_address || '127.0.0.1',
               timestamp: item.timestamp || new Date().toLocaleTimeString(),
-              attack_type: item.attack_type || 'SQL Injection'
+              attack_type: item.attack_type || 'SQL Injection',
+              client_id: item.client_id || 'default'
             };
           }
           return {
             ip: String(item),
             timestamp: new Date(Date.now() - idx * 60000).toLocaleTimeString(),
-            attack_type: 'SQL Injection'
+            attack_type: 'SQL Injection',
+            client_id: 'default'
           };
         });
         setBlockedIps(normalized);
@@ -47,27 +50,25 @@ export default function App() {
     }
   }, []);
 
-  // Polling loop every 3000ms (3 seconds)
   useEffect(() => {
-    fetchData();
-    const intervalId = setInterval(fetchData, 3000);
-    return () => clearInterval(intervalId);
-  }, [fetchData]);
+    if (currentView === 'admin') {
+      fetchData();
+      const intervalId = setInterval(fetchData, 3000);
+      return () => clearInterval(intervalId);
+    }
+  }, [fetchData, currentView]);
 
-  // Task 3.2: Unban function calling DELETE /unban/{ip}
   const handleUnban = async (ip) => {
     setIsUnbanning(ip);
     try {
       await axios.delete(`${HUB_URL}/unban/${encodeURIComponent(ip)}`);
       
-      // Optimistic update
       setBlockedIps(prev => prev.filter(item => item.ip !== ip));
       setStats(prev => ({
         ...prev,
         total_blocked: Math.max(0, prev.total_blocked - 1)
       }));
 
-      // Refresh data
       fetchData();
     } catch (error) {
       console.error(`Failed to unban IP ${ip}:`, error);
@@ -76,12 +77,16 @@ export default function App() {
     }
   };
 
+  if (currentView === 'client') {
+    return <ClientPortal onBackToAdmin={() => setCurrentView('admin')} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans pb-12">
       
       {/* 1. Top Navigation Bar */}
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           
           {/* Logo & Title */}
           <div className="flex items-center space-x-3">
@@ -94,9 +99,38 @@ export default function App() {
             </div>
           </div>
 
-          {/* Pulsing Network Indicator */}
+          {/* Navigation Controls & Status */}
           <div className="flex items-center space-x-3">
-            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border text-xs font-mono font-medium ${
+            
+            {/* View Switcher Tabs */}
+            <div className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+              <button
+                onClick={() => setCurrentView('admin')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all ${
+                  currentView === 'admin'
+                    ? 'bg-emerald-950 text-emerald-300 font-bold border border-emerald-800/60 shadow'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Admin SOC</span>
+              </button>
+
+              <button
+                onClick={() => setCurrentView('client')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all ${
+                  currentView === 'client'
+                    ? 'bg-cyan-950 text-cyan-300 font-bold border border-cyan-800/60 shadow'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Client Portal</span>
+              </button>
+            </div>
+
+            {/* Pulsing Network Indicator */}
+            <div className={`hidden md:flex items-center space-x-2 px-3 py-1 rounded-full border text-xs font-mono font-medium ${
               isOnline 
                 ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60' 
                 : 'bg-amber-950/60 text-amber-400 border-amber-800/60 animate-pulse'
@@ -210,6 +244,7 @@ export default function App() {
                   <th className="py-3 px-4">Attacker IP Address</th>
                   <th className="py-3 px-4">Attack Classification</th>
                   <th className="py-3 px-4">Mock Timestamp</th>
+                  <th className="py-3 px-4">Target Client</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -227,6 +262,11 @@ export default function App() {
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-slate-400">{item.timestamp}</td>
+                        <td className="py-3.5 px-4">
+                          <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[11px]">
+                            {item.client_id || 'default'}
+                          </span>
+                        </td>
                         <td className="py-3.5 px-4">
                           <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800/60 text-[10px] font-semibold">
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
@@ -248,7 +288,7 @@ export default function App() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-500 italic">
+                    <td colSpan={6} className="py-10 text-center text-slate-500 italic">
                       No blocked IP addresses registered in global hub. Run attack simulation to test.
                     </td>
                   </tr>
