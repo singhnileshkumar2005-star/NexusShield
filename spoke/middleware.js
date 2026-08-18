@@ -2,7 +2,7 @@ const axios = require('axios');
 
 // In-memory local blocklist
 const localBlockedIPs = new Set();
-const HUB_URL = process.env.HUB_URL || 'http://127.0.0.1:8000';
+const HUB_URL = process.env.HUB_URL || 'https://nexusshield.onrender.com';
 const SYNC_INTERVAL_MS = 10000; // 10 seconds
 
 // SQL Injection Detection Patterns (Case-Insensitive)

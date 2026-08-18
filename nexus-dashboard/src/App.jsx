@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { ShieldAlert, Server, Activity, ShieldCheck, UserX, RefreshCw, Flame, Radio } from 'lucide-react';
 
-const HUB_URL = 'http://127.0.0.1:8000';
+const HUB_URL = 'https://nexusshield.onrender.com';
 
 export default function App() {
   const [blockedIps, setBlockedIps] = useState([]);

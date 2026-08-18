@@ -7,7 +7,7 @@ import AnalyticsSection from './components/AnalyticsSection';
 import BlocklistTable from './components/BlocklistTable';
 import SimulatorModal from './components/SimulatorModal';
 
-const HUB_API = 'http://127.0.0.1:8000';
+const HUB_API = 'https://nexusshield.onrender.com';
 
 // Fallback Mock State when backend is temporarily offline
 const MOCK_FALLBACK = {
@@ -142,7 +142,7 @@ export default function App() {
           <div className="mb-6 p-3 rounded-xl bg-amber-950/50 border border-amber-800/60 text-amber-300 text-xs font-mono flex items-center justify-between shadow-lg">
             <div className="flex items-center space-x-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-              <span><strong>Connecting to Threat Hub...</strong> FastAPI Hub backend is starting or offline at <code>http://127.0.0.1:8000</code>. Displaying live mock state.</span>
+              <span><strong>Connecting to Threat Hub...</strong> FastAPI Hub backend is starting or offline at <code>https://nexusshield.onrender.com</code>. Displaying live mock state.</span>
             </div>
             <button 
               onClick={handleManualRefresh}

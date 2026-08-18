@@ -2,7 +2,7 @@ const axios = require('axios');
 
 // Local in-memory Set of blocked IPs
 const blockedIPs = new Set();
-const HUB_URL = process.env.HUB_URL || 'http://127.0.0.1:8000';
+const HUB_URL = 'https://nexusshield.onrender.com';
 const SYNC_INTERVAL_MS = 2000; // 2 seconds
 
 // Advanced Threat Detection Regex Patterns
