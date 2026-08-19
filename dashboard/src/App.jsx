@@ -81,7 +81,108 @@ export default function App() {
     }
   }, []);
 
-  // Initial load + Automatic 3-Second Background Polling
+  // Real-Time Server-Sent Events (SSE) Stream Listener
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.EventSource === 'undefined') {
+      return;
+    }
+
+    const sseUrl = `${HUB_API}/events?api_key=${encodeURIComponent(API_KEY)}`;
+    let eventSource = null;
+
+    try {
+      eventSource = new EventSource(sseUrl);
+
+      eventSource.onopen = () => {
+        setIsOnline(true);
+      };
+
+      eventSource.onmessage = (event) => {
+        if (!event.data) return;
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.event === 'ban') {
+            const newEvent = {
+              id: Date.now() + Math.random(),
+              ip: payload.ip,
+              attack_type: payload.attack_type || 'Threat Detected',
+              timestamp: new Date().toLocaleTimeString(),
+              node: payload.client_id || 'Site-A',
+              status: 'Blocked'
+            };
+
+            setStats(prev => ({
+              ...prev,
+              total_blocked: (prev?.total_blocked ?? 0) + 1,
+              attacks_today: (prev?.attacks_today ?? 0) + 1,
+              recent_events: [newEvent, ...(prev?.recent_events || [])]
+            }));
+
+            setBlocklist(prev => {
+              const current = prev || [];
+              const exists = current.some(item => (typeof item === 'object' ? item.ip : item) === payload.ip);
+              if (exists) return current;
+              return [
+                {
+                  ip: payload.ip,
+                  attack_type: payload.attack_type || 'SQL Injection',
+                  timestamp: new Date().toLocaleTimeString(),
+                  expires_at: payload.expires_at || null,
+                  client_id: payload.client_id || 'default',
+                  node: payload.client_id || 'Site-A'
+                },
+                ...current
+              ];
+            });
+          } else if (payload.event === 'unban') {
+            setBlocklist(prev => (prev || []).filter(item => {
+              const itemIp = typeof item === 'object' ? item.ip : item;
+              return itemIp !== payload.ip;
+            }));
+
+            setStats(prev => ({
+              ...prev,
+              total_blocked: Math.max(0, (prev?.total_blocked || 1) - 1),
+              recent_events: [
+                {
+                  id: Date.now() + Math.random(),
+                  ip: payload.ip,
+                  attack_type: 'Revoked / Unbanned',
+                  timestamp: new Date().toLocaleTimeString(),
+                  node: 'SOC-Admin',
+                  status: 'Unbanned'
+                },
+                ...(prev?.recent_events || [])
+              ]
+            }));
+          } else if (payload.event === 'clear') {
+            setBlocklist([]);
+            setStats(prev => ({
+              ...prev,
+              total_blocked: 0,
+              recent_events: []
+            }));
+          }
+        } catch (err) {
+          // Ignore parsing errors
+        }
+      };
+
+      eventSource.onerror = () => {
+        // SSE will automatically attempt reconnection in browser
+      };
+    } catch (err) {
+      console.error("SSE connection error:", err);
+    }
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, []);
+
+  // Initial load + Automatic 3-Second Background Polling fallback
   useEffect(() => {
     if (currentView === 'admin') {
       fetchData();

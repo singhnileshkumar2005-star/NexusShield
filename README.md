@@ -65,35 +65,30 @@ cd ..
 
 ## 🚀 Running the Project
 
-Open 4 separate terminal windows:
+You can start each service using npm scripts from the root directory:
 
-### Terminal 1: Central Hub (FastAPI - Port 8000)
+### Central Threat Hub (FastAPI - Port 8000)
 ```bash
-python hub/main.py
+npm run start:hub
+# Or directly: python hub/main.py
 ```
 
-### Terminal 2: Site A (Express Spoke - Port 3000)
+### Site A Protected Spoke (Express - Port 3000)
 ```bash
-# Windows PowerShell:
-$env:PORT=3000; $env:SITE_NAME="Site-A"; node spoke/server.js
-
-# Windows CMD:
-set PORT=3000&& set SITE_NAME=Site-A&& node spoke/server.js
+npm run start:siteA
+# Or directly: node nexus-client/siteA.js
 ```
 
-### Terminal 3: Site B (Express Spoke - Port 3001)
+### Site B Protected Spoke (Express - Port 3001)
 ```bash
-# Windows PowerShell:
-$env:PORT=3001; $env:SITE_NAME="Site-B"; node spoke/server.js
-
-# Windows CMD:
-set PORT=3001&& set SITE_NAME=Site-B&& node spoke/server.js
+npm run start:siteB
+# Or directly: node nexus-client/siteB.js
 ```
 
-### Terminal 4: SOC Dashboard Frontend (React/Vite - Port 5173)
+### SOC Dashboard Frontend (React/Vite - Port 5173)
 ```bash
-cd dashboard
-npx vite
+npm run start:dashboard
+# Or directly: cd dashboard && npm run dev
 ```
 Open **`http://localhost:5173`** in your web browser.
 
@@ -104,7 +99,8 @@ Open **`http://localhost:5173`** in your web browser.
 ### Option A: Via Dashboard Attack Simulator
 Click the **"Attack Simulator"** button in the dashboard top navigation bar to fire test attacks directly from the UI.
 
-### Option B: Via Python CLI Simulator
+### Option B: Via Automated Verification Suite
 ```bash
-python attack.py
+npm test
+# Or directly: python attack.py
 ```

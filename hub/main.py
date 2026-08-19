@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Path, Header, Depends
+from fastapi import FastAPI, HTTPException, Path, Header, Depends, Request
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict
@@ -6,6 +7,8 @@ from datetime import datetime, timedelta
 import sqlite3
 import os
 import logging
+import asyncio
+import json
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("NexusShield-Hub")
@@ -16,6 +19,26 @@ DB_FILE = os.path.join(os.path.dirname(__file__), "nexus.db")
 NEXUS_API_KEY = os.environ.get("NEXUS_API_KEY", "nexus_dev_key_2026")
 NEXUS_ADMIN_TOKEN = os.environ.get("NEXUS_ADMIN_TOKEN", "nexus_admin_secret_2026")
 BAN_TTL_HOURS = int(os.environ.get("BAN_TTL_HOURS", "24"))
+
+# Real-Time SSE Listener Queues
+sse_listeners: List[asyncio.Queue] = []
+
+def broadcast_sse_event(event_data: dict):
+    """
+    Broadcasts real-time security events to all active SSE listener queues.
+    """
+    if not sse_listeners:
+        return
+    msg = f"data: {json.dumps(event_data)}\n\n"
+    dead_queues = []
+    for q in list(sse_listeners):
+        try:
+            q.put_nowait(msg)
+        except Exception:
+            dead_queues.append(q)
+    for dq in dead_queues:
+        if dq in sse_listeners:
+            sse_listeners.remove(dq)
 
 def init_db():
     conn = sqlite3.connect(DB_FILE, timeout=10.0)
@@ -131,6 +154,48 @@ def read_root():
         "ban_ttl_hours": BAN_TTL_HOURS
     }
 
+@app.get("/events")
+async def events_stream(
+    request: Request,
+    x_api_key: Optional[str] = Header(None),
+    api_key: Optional[str] = None
+):
+    """
+    Server-Sent Events (SSE) stream endpoint for real-time threat propagation.
+    Supports x-api-key validation, ?api_key= query parameter, or public connection.
+    """
+    provided_key = x_api_key or api_key
+    if provided_key and (provided_key != NEXUS_API_KEY and provided_key != NEXUS_ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Unauthorized: Invalid API key")
+
+    async def event_generator():
+        queue: asyncio.Queue = asyncio.Queue()
+        sse_listeners.append(queue)
+        try:
+            initial_payload = json.dumps({"event": "connected", "message": "NexusShield Real-Time SSE Stream active"})
+            yield f"data: {initial_payload}\n\n"
+            while True:
+                try:
+                    msg = await asyncio.wait_for(queue.get(), timeout=15.0)
+                    yield msg
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+        except (asyncio.CancelledError, GeneratorExit):
+            pass
+        finally:
+            if queue in sse_listeners:
+                sse_listeners.remove(queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
 @app.post("/report")
 def report_attack(payload: ReportPayload, _auth: str = Depends(verify_api_key)):
     ip = payload.ip_address.strip()
@@ -170,6 +235,15 @@ def report_attack(payload: ReportPayload, _auth: str = Depends(verify_api_key)):
     """)
     total = cursor.fetchone()[0] or 0
     conn.close()
+
+    # Publish real-time SSE event to all active listeners
+    broadcast_sse_event({
+        "event": "ban",
+        "ip": ip,
+        "attack_type": attack_type,
+        "client_id": client_id,
+        "expires_at": expires_str
+    })
 
     logger.warning(f"[NEW THREAT REPORTED] IP: {ip} | Client: {client_id} | Type: {attack_type} | Expires: {expires_str}")
 
@@ -347,6 +421,12 @@ def unban_ip(
     total = cursor.fetchone()[0] or 0
     conn.close()
 
+    # Publish real-time SSE event to all active listeners
+    broadcast_sse_event({
+        "event": "unban",
+        "ip": ip
+    })
+
     if deleted > 0:
         logger.info(f"[UNBANNED] IP {ip} unbanned from SQLite database.")
         return {
@@ -370,6 +450,12 @@ def clear_blocklist(_auth: str = Depends(verify_admin_token)):
     cursor.execute("DELETE FROM attacks")
     conn.commit()
     conn.close()
+
+    # Publish real-time SSE event to all active listeners
+    broadcast_sse_event({
+        "event": "clear"
+    })
+
     logger.info("SQLite blocklist database cleared")
     return {"status": "cleared", "total_blocked": 0}
 

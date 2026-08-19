@@ -24,7 +24,7 @@ export default function ThreatStream({ events }) {
         </div>
         <div className="flex items-center space-x-2">
           <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
-          <span className="text-xs font-mono text-slate-400">Live Polling (3s)</span>
+          <span className="text-xs font-mono text-slate-400">Live SSE Stream</span>
         </div>
       </div>
 

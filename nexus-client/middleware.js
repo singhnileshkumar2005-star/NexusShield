@@ -1,10 +1,41 @@
 const axios = require('axios');
+const http = require('http');
+const https = require('https');
+const { URL } = require('url');
 
 // Local in-memory Set of blocked IPs
 const blockedIPs = new Set();
 const DEFAULT_HUB_URL = process.env.HUB_URL || 'http://127.0.0.1:8000';
 const DEFAULT_API_KEY = process.env.NEXUS_API_KEY || 'nexus_dev_key_2026';
 const SYNC_INTERVAL_MS = 2000; // 2 seconds
+
+// Sliding Window Rate Limiter In-Memory Store & Defaults
+const rateLimitMap = new Map();
+const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60000; // 60 seconds
+
+const DEFAULT_RATE_LIMIT = {
+  enabled: true,
+  windowMs: 60000,
+  maxRequests: 60,
+  banOnExceed: true
+};
+
+// Periodic cleanup of idle IPs from rate limiter map every 60 seconds to prevent memory leaks
+const rateLimitCleanupInterval = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of rateLimitMap.entries()) {
+    const validTimestamps = timestamps.filter(ts => (now - ts) < 60000);
+    if (validTimestamps.length === 0) {
+      rateLimitMap.delete(ip);
+    } else {
+      rateLimitMap.set(ip, validTimestamps);
+    }
+  }
+}, RATE_LIMIT_CLEANUP_INTERVAL_MS);
+
+if (rateLimitCleanupInterval.unref) {
+  rateLimitCleanupInterval.unref();
+}
 
 // Advanced Threat Detection Regex Patterns
 const SQLI_PATTERNS = [
@@ -44,7 +75,148 @@ function normalizeIP(rawIp) {
 }
 
 /**
- * Synchronizes local blocked IPs set with FastAPI Hub
+ * SSE Connection & Real-Time Event Handling with Exponential Backoff
+ */
+let sseReq = null;
+let reconnectTimeout = null;
+let backoffDelay = 1000; // 1s initial delay
+const MAX_BACKOFF_DELAY = 30000; // 30s max delay
+let currentHubUrl = process.env.HUB_URL || DEFAULT_HUB_URL;
+let currentApiKey = process.env.NEXUS_API_KEY || DEFAULT_API_KEY;
+
+function handleSSEEvent(data) {
+  if (!data || !data.event) return;
+  if (data.event === 'ban' && data.ip) {
+    blockedIPs.add(normalizeIP(data.ip));
+  } else if (data.event === 'unban' && data.ip) {
+    blockedIPs.delete(normalizeIP(data.ip));
+  } else if (data.event === 'clear') {
+    blockedIPs.clear();
+  }
+}
+
+function scheduleSSEReconnect() {
+  if (reconnectTimeout) return;
+  const delay = backoffDelay;
+  backoffDelay = Math.min(backoffDelay * 2, MAX_BACKOFF_DELAY);
+  reconnectTimeout = setTimeout(() => {
+    reconnectTimeout = null;
+    const activeUrl = process.env.HUB_URL || currentHubUrl || DEFAULT_HUB_URL;
+    const activeKey = process.env.NEXUS_API_KEY || currentApiKey || DEFAULT_API_KEY;
+    connectSSE(activeUrl, activeKey);
+  }, delay);
+  if (reconnectTimeout.unref) {
+    reconnectTimeout.unref();
+  }
+}
+
+function connectSSE(hubUrl, apiKey) {
+  if (hubUrl) currentHubUrl = hubUrl;
+  if (apiKey) currentApiKey = apiKey;
+
+  const targetHubUrl = currentHubUrl;
+  const targetApiKey = currentApiKey;
+
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+  if (sseReq) {
+    const oldReq = sseReq;
+    sseReq = null;
+    try {
+      oldReq.destroy();
+    } catch (e) {}
+  }
+
+  try {
+    const urlObj = new URL(`${targetHubUrl}/events`);
+    const isHttps = urlObj.protocol === 'https:';
+    const client = isHttps ? https : http;
+
+    const options = {
+      hostname: urlObj.hostname,
+      port: urlObj.port || (isHttps ? 443 : 80),
+      path: urlObj.pathname + (urlObj.search || ''),
+      method: 'GET',
+      headers: {
+        'Accept': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'x-api-key': targetApiKey
+      }
+    };
+
+    const req = client.request(options, (res) => {
+      if (req !== sseReq) return;
+
+      if (res.statusCode !== 200) {
+        scheduleSSEReconnect();
+        return;
+      }
+
+      // Connection established: reset backoff delay
+      backoffDelay = 1000;
+      let buffer = '';
+
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => {
+        if (req !== sseReq) return;
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // Keep trailing incomplete line
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data:')) {
+            const jsonText = trimmed.slice(5).trim();
+            if (!jsonText) continue;
+            try {
+              const eventData = JSON.parse(jsonText);
+              handleSSEEvent(eventData);
+            } catch (err) {
+              // Ignore non-JSON comments or keepalive
+            }
+          }
+        }
+      });
+
+      res.on('end', () => {
+        if (req === sseReq) {
+          scheduleSSEReconnect();
+        }
+      });
+
+      res.on('error', () => {
+        if (req === sseReq) {
+          scheduleSSEReconnect();
+        }
+      });
+    });
+
+    req.on('error', () => {
+      if (req === sseReq) {
+        scheduleSSEReconnect();
+      }
+    });
+
+    req.setTimeout(30000, () => {
+      if (req === sseReq) {
+        req.destroy();
+      }
+    });
+
+    sseReq = req;
+    req.end();
+  } catch (err) {
+    scheduleSSEReconnect();
+  }
+}
+
+// Start real-time SSE background connection
+connectSSE();
+
+/**
+ * Synchronizes local blocked IPs set with FastAPI Hub (2-second fallback polling)
  */
 async function syncBlocklist(hubUrl = DEFAULT_HUB_URL, apiKey = DEFAULT_API_KEY) {
   try {
@@ -68,7 +240,7 @@ async function syncBlocklist(hubUrl = DEFAULT_HUB_URL, apiKey = DEFAULT_API_KEY)
   }
 }
 
-// Start background sync loop
+// Start fallback background sync loop
 syncBlocklist();
 const syncInterval = setInterval(() => {
   const currentHubUrl = process.env.HUB_URL || DEFAULT_HUB_URL;
@@ -161,6 +333,7 @@ function createThreatShieldMiddleware(config = {}) {
   let clientId = 'default';
   let hubUrl = process.env.HUB_URL || DEFAULT_HUB_URL;
   let apiKey = process.env.NEXUS_API_KEY || DEFAULT_API_KEY;
+  let rateLimitConfig = { ...DEFAULT_RATE_LIMIT };
 
   if (typeof config === 'string') {
     clientId = config;
@@ -168,6 +341,17 @@ function createThreatShieldMiddleware(config = {}) {
     if (config.clientId) clientId = config.clientId;
     if (config.hubUrl) hubUrl = config.hubUrl;
     if (config.apiKey) apiKey = config.apiKey;
+
+    if (config.rateLimit === false) {
+      rateLimitConfig.enabled = false;
+    } else if (typeof config.rateLimit === 'object' && config.rateLimit !== null) {
+      rateLimitConfig = {
+        enabled: config.rateLimit.enabled !== undefined ? Boolean(config.rateLimit.enabled) : DEFAULT_RATE_LIMIT.enabled,
+        windowMs: typeof config.rateLimit.windowMs === 'number' ? config.rateLimit.windowMs : DEFAULT_RATE_LIMIT.windowMs,
+        maxRequests: typeof config.rateLimit.maxRequests === 'number' ? config.rateLimit.maxRequests : DEFAULT_RATE_LIMIT.maxRequests,
+        banOnExceed: config.rateLimit.banOnExceed !== undefined ? Boolean(config.rateLimit.banOnExceed) : DEFAULT_RATE_LIMIT.banOnExceed
+      };
+    }
   }
 
   return function threatShieldHandler(req, res, next) {
@@ -183,7 +367,47 @@ function createThreatShieldMiddleware(config = {}) {
       });
     }
 
-    // Defense Rule B: Payload Detection & Threat Classification
+    // Defense Rule B: In-Memory Sliding Window Rate Limiter & DoS Protection
+    if (rateLimitConfig.enabled) {
+      const now = Date.now();
+      let timestamps = rateLimitMap.get(clientIp);
+
+      if (!timestamps) {
+        timestamps = [];
+      } else {
+        // Clean timestamps older than now - windowMs
+        timestamps = timestamps.filter(ts => (now - ts) < rateLimitConfig.windowMs);
+      }
+
+      if (timestamps.length >= rateLimitConfig.maxRequests) {
+        if (rateLimitConfig.banOnExceed) {
+          const attackType = 'Rate Limit Exceeded / DoS Flooding';
+          // Add IP to local blockedIPs Set
+          blockedIPs.add(clientIp);
+
+          // Asynchronously report to Central Hub
+          reportThreat(clientIp, attackType, clientId, hubUrl, apiKey).catch(() => {});
+
+          return res.status(429).json({
+            error: 'Too Many Requests',
+            message: '429 Rate Limit Exceeded: IP Banned for DoS Flooding',
+            client_ip: clientIp
+          });
+        } else {
+          return res.status(429).json({
+            error: 'Too Many Requests',
+            message: '429 Rate Limit Exceeded',
+            client_ip: clientIp
+          });
+        }
+      }
+
+      // Record current request timestamp within sliding window
+      timestamps.push(now);
+      rateLimitMap.set(clientIp, timestamps);
+    }
+
+    // Defense Rule C: Payload Detection & Threat Classification
     const threatType = detectThreatVector(req);
 
     if (threatType) {
@@ -229,6 +453,11 @@ threatShield.blockedIPs = blockedIPs;
 threatShield.localBlockedIPs = blockedIPs;
 threatShield.normalizeIP = normalizeIP;
 threatShield.detectThreatVector = detectThreatVector;
+threatShield.rateLimitMap = rateLimitMap;
+threatShield.DEFAULT_RATE_LIMIT = DEFAULT_RATE_LIMIT;
+threatShield.rateLimitCleanupInterval = rateLimitCleanupInterval;
+threatShield.connectSSE = connectSSE;
+threatShield.handleSSEEvent = handleSSEEvent;
 
 module.exports = threatShield;
 

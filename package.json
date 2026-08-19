@@ -1,15 +1,19 @@
 {
-  "name": "waf-spoke-client",
+  "name": "nexusshield",
   "version": "1.0.0",
-  "description": "Zero-Knowledge Collaborative WAF Express Middleware and Spoke Server",
-  "main": "spoke/server.js",
+  "description": "Zero-Knowledge Collaborative Web Application Firewall (WAF) & SOC Platform",
+  "main": "nexus-client/middleware.js",
   "scripts": {
-    "start": "node spoke/server.js",
-    "start:site-a": "set PORT=3000&& node spoke/server.js",
-    "start:site-b": "set PORT=3001&& node spoke/server.js"
+    "start": "node nexus-client/siteA.js",
+    "start:hub": "python hub/main.py",
+    "start:siteA": "node nexus-client/siteA.js",
+    "start:siteB": "node nexus-client/siteB.js",
+    "start:dashboard": "cd dashboard && npm run dev",
+    "build:dashboard": "cd dashboard && npm run build",
+    "test": "python attack.py"
   },
   "dependencies": {
-    "axios": "^1.6.0",
-    "express": "^4.18.2"
+    "axios": "^1.6.8",
+    "express": "^4.19.2"
   }
 }
