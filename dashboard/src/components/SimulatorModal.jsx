@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { X, Play, Terminal, Zap, ShieldAlert, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 
-export default function SimulatorModal({ isOpen, onClose, onRefreshData }) {
+const DEFAULT_HUB_API = import.meta.env.VITE_HUB_API || 
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:8000'
+    : 'https://nexusshield.onrender.com');
+
+export default function SimulatorModal({ isOpen, onClose, onRefreshData, hubApi = DEFAULT_HUB_API }) {
   const [targetUrl, setTargetUrl] = useState('http://127.0.0.1:3000');
   const [nodeName, setNodeName] = useState('Site-A');
   const [attackType, setAttackType] = useState('SQL Injection');
@@ -19,7 +24,7 @@ export default function SimulatorModal({ isOpen, onClose, onRefreshData }) {
       setAttackType('SQL Injection');
       setPayload("/search?q=' OR 1=1");
     } else if (type === 'XSS') {
-      setAttackType('XSS Vector');
+      setAttackType('Cross-Site Scripting');
       setPayload("/comment?text=<script>alert('waf')</script>");
     } else if (type === 'Path') {
       setAttackType('Path Traversal');
@@ -38,10 +43,11 @@ export default function SimulatorModal({ isOpen, onClose, onRefreshData }) {
 
     try {
       // 1. Send test attack to target URL or report directly to Hub
-      if (targetUrl.includes('8000')) {
+      if (targetUrl.includes('8000') || targetUrl.includes('onrender')) {
         // Direct report to Hub
-        await axios.post('http://127.0.0.1:8000/report', {
+        await axios.post(`${hubApi}/report`, {
           ip_address: customIp,
+          client_id: nodeName,
           attack_type: attackType,
           node: nodeName
         });
@@ -65,8 +71,9 @@ export default function SimulatorModal({ isOpen, onClose, onRefreshData }) {
             ]);
           } else {
             // Also report directly to hub to ensure UI updates during test
-            await axios.post('http://127.0.0.1:8000/report', {
+            await axios.post(`${hubApi}/report`, {
               ip_address: customIp,
+              client_id: nodeName,
               attack_type: attackType,
               node: nodeName
             });

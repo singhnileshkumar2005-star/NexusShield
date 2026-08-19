@@ -1,148 +1,223 @@
 const axios = require('axios');
 
-// In-memory local blocklist
-const localBlockedIPs = new Set();
-const HUB_URL = process.env.HUB_URL || 'https://nexusshield.onrender.com';
-const SYNC_INTERVAL_MS = 10000; // 10 seconds
+// Local in-memory Set of blocked IPs
+const blockedIPs = new Set();
+const DEFAULT_HUB_URL = process.env.HUB_URL || 'http://127.0.0.1:8000';
+const SYNC_INTERVAL_MS = 2000; // 2 seconds
 
-// SQL Injection Detection Patterns (Case-Insensitive)
+// Advanced Threat Detection Regex Patterns
 const SQLI_PATTERNS = [
-  /'\s*or\s*['"]?1['"]?\s*=\s*['"]?1/i,         // ' OR 1=1, ' OR '1'='1
-  /union\s+(all\s+)?select/i,                    // UNION SELECT, UNION ALL SELECT
-  /;\s*drop\s+table/i,                          // ; DROP TABLE
+  /'\s*or\s*['"]?1['"]?\s*=\s*['"]?1/i,  // ' OR 1=1, ' OR '1'='1
+  /union\s+(all\s+)?select/i,           // UNION SELECT, UNION ALL SELECT
+  /;\s*drop\s+table/i,                 // ; DROP TABLE
   /'\s*or\s*['"]?[a-z0-9]+['"]?\s*=\s*['"]?[a-z0-9]+/i, // ' OR 'a'='a'
-  /exec(\s|\+)+(s|x)p\w+/i,                     // exec xp_cmdshell
-  /insert\s+into/i,                             // INSERT INTO
-  /delete\s+from/i                              // DELETE FROM
+  /exec(\s|\+)+(s|x)p\w+/i,            // exec xp_cmdshell
+  /insert\s+into/i,                    // INSERT INTO
+  /delete\s+from/i,                     // DELETE FROM
+  /--/,                                // SQL Comment --
+  /#/                                  // SQL Comment #
+];
+
+const XSS_PATTERNS = [
+  /(<script>)|(javascript:)|(onerror=)|(onload=)|(<img\s+src=)|(alert\()/i
+];
+
+const PATH_TRAVERSAL_PATTERNS = [
+  /(\.\.\/)|(\.\.\\)|(%2e%2e%2f)|(%2e%2e\/)/i
 ];
 
 /**
- * Normalizes IP address strings (e.g., converts IPv6 mapped IPv4 like ::ffff:127.0.0.1 to 127.0.0.1)
+ * Normalizes IP address strings (e.g. ::1 -> 127.0.0.1, ::ffff:127.0.0.1 -> 127.0.0.1)
  */
 function normalizeIP(rawIp) {
   if (!rawIp) return '127.0.0.1';
-  let ip = rawIp.trim();
+  let ip = String(rawIp).trim();
   if (ip.startsWith('::ffff:')) {
     ip = ip.replace('::ffff:', '');
   }
-  if (ip === '::1') {
+  if (ip === '::1' || ip === 'localhost') {
     ip = '127.0.0.1';
   }
   return ip;
 }
 
 /**
- * Fetches the global blocklist from the Hub and updates local blocklist
+ * Synchronizes local blocked IPs set with FastAPI Hub
  */
-async function fetchGlobalBlocklist() {
+async function syncBlocklist(hubUrl = DEFAULT_HUB_URL) {
   try {
-    const response = await axios.get(`${HUB_URL}/blocklist`, { timeout: 3000 });
+    const response = await axios.get(`${hubUrl}/blocklist`, { timeout: 3000 });
     if (response.data && Array.isArray(response.data.blocked_ips)) {
       const serverBlocklist = response.data.blocked_ips.map(item => {
         const rawIp = typeof item === 'object' && item !== null ? item.ip : item;
         return normalizeIP(rawIp);
       });
-      
-      let newAddedCount = 0;
+
+      blockedIPs.clear();
       for (const ip of serverBlocklist) {
-        if (!localBlockedIPs.has(ip)) {
-          localBlockedIPs.add(ip);
-          newAddedCount++;
-        }
+        blockedIPs.add(ip);
       }
-      console.log(`[WAF Sync] Global blocklist updated. Total local blocked IPs: ${localBlockedIPs.size} (+${newAddedCount} new)`);
     }
   } catch (error) {
-    console.error(`[WAF Sync Error] Could not connect to Hub at ${HUB_URL}: ${error.message}`);
+    // Graceful error handling without crashing process
   }
 }
 
+// Start background sync loop
+syncBlocklist();
+const syncInterval = setInterval(() => syncBlocklist(process.env.HUB_URL || DEFAULT_HUB_URL), SYNC_INTERVAL_MS);
+if (syncInterval.unref) {
+  syncInterval.unref();
+}
+
 /**
- * Sends asynchronous report to the Hub when an attack is detected
+ * Asynchronously sends threat report to FastAPI Hub
  */
-async function reportAttackToHub(ipAddress, attackType) {
+async function reportThreat(ipAddress, attackType, clientId = 'default', hubUrl = DEFAULT_HUB_URL) {
   try {
-    await axios.post(`${HUB_URL}/report`, {
+    await axios.post(`${hubUrl}/report`, {
       ip_address: ipAddress,
-      client_id: 'spoke',
+      client_id: clientId,
       attack_type: attackType
     }, { timeout: 3000 });
-    console.log(`[WAF Report] Successfully reported ${ipAddress} (${attackType}) to Hub.`);
   } catch (error) {
-    console.error(`[WAF Report Error] Failed to report ${ipAddress} to Hub: ${error.message}`);
+    // Handle error gracefully
   }
 }
 
 /**
- * Checks request URL and query string for SQL Injection signatures
+ * Inspects a string target for threat patterns
  */
-function containsSQLi(urlStr) {
-  const decodedUrl = decodeURIComponent(urlStr);
-  return SQLI_PATTERNS.some(pattern => pattern.test(decodedUrl));
+function inspectString(str) {
+  if (!str || typeof str !== 'string') return null;
+  let decoded = str;
+  try {
+    decoded = decodeURIComponent(str);
+  } catch (e) {
+    decoded = str;
+  }
+
+  if (SQLI_PATTERNS.some(p => p.test(decoded))) {
+    return 'SQL Injection';
+  }
+  if (XSS_PATTERNS.some(p => p.test(decoded))) {
+    return 'Cross-Site Scripting';
+  }
+  if (PATH_TRAVERSAL_PATTERNS.some(p => p.test(decoded))) {
+    return 'Path Traversal';
+  }
+  return null;
 }
 
 /**
- * Main Express WAF Middleware
+ * Inspects incoming request (URL, query, body, and headers) for malicious vectors
  */
-function wafMiddleware(req, res, next) {
-  const rawClientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const clientIp = normalizeIP(rawClientIp);
+function detectThreatVector(req) {
+  if (!req) return null;
 
-  // 1. Check if IP is already in local blocklist
-  if (localBlockedIPs.has(clientIp)) {
-    console.warn(`[WAF Blocked] Request from blocked IP ${clientIp} rejected (403 Forbidden).`);
-    return res.status(403).json({
-      error: 'Forbidden',
-      message: 'Access denied by Collaborative Web Application Firewall (Global Blocklist)',
-      client_ip: clientIp
-    });
+  // 1. Inspect URL & Query
+  const urlStr = req.originalUrl || req.url || '';
+  const urlThreat = inspectString(urlStr);
+  if (urlThreat) return urlThreat;
+
+  // 2. Inspect Request Body (if parsed or raw)
+  if (req.body) {
+    const bodyStr = typeof req.body === 'object' ? JSON.stringify(req.body) : String(req.body);
+    const bodyThreat = inspectString(bodyStr);
+    if (bodyThreat) return bodyThreat;
   }
 
-  // 2. Inspect URL string for basic SQL Injection attacks
-  const fullUrl = req.originalUrl || req.url;
-  if (containsSQLi(fullUrl)) {
-    console.warn(`[WAF Attack Detected!] SQL Injection detected from IP ${clientIp} on URL: ${fullUrl}`);
-
-    // Block locally immediately
-    localBlockedIPs.add(clientIp);
-
-    // Asynchronously report to Hub
-    reportAttackToHub(clientIp, 'SQL Injection').catch(() => {});
-
-    // Return 403 Forbidden
-    return res.status(403).json({
-      error: 'Forbidden',
-      message: 'Access denied: SQL Injection payload detected by WAF middleware',
-      client_ip: clientIp
-    });
+  // 3. Inspect Headers
+  if (req.headers) {
+    const headerTargets = ['user-agent', 'referer', 'x-custom-payload'];
+    for (const h of headerTargets) {
+      if (req.headers[h]) {
+        const headerThreat = inspectString(String(req.headers[h]));
+        if (headerThreat) return headerThreat;
+      }
+    }
   }
 
-  // Clean request -> proceed
-  next();
+  return null;
 }
 
 /**
- * Initializes WAF sync loop and returns middleware handler
+ * Creates ThreatShield Middleware instance configured for a specific clientId
  */
-function createWafInstance(options = {}) {
-  // Initial sync immediately
-  fetchGlobalBlocklist();
+function createThreatShieldMiddleware(config = {}) {
+  let clientId = 'default';
+  let hubUrl = process.env.HUB_URL || DEFAULT_HUB_URL;
 
-  // Periodic sync every 10 seconds
-  const intervalId = setInterval(fetchGlobalBlocklist, SYNC_INTERVAL_MS);
-
-  // Prevent background interval from keeping node process open on shutdown if unref is supported
-  if (intervalId.unref) {
-    intervalId.unref();
+  if (typeof config === 'string') {
+    clientId = config;
+  } else if (config && typeof config === 'object') {
+    if (config.clientId) clientId = config.clientId;
+    if (config.hubUrl) hubUrl = config.hubUrl;
   }
 
-  return wafMiddleware;
+  return function threatShieldHandler(req, res, next) {
+    const rawIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const clientIp = normalizeIP(rawIp);
+
+    // Defense Rule A: Global Blocklist Enforcement
+    if (blockedIPs.has(clientIp)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: '403 Forbidden: IP Globally Banned by NexusShield',
+        client_ip: clientIp
+      });
+    }
+
+    // Defense Rule B: Payload Detection & Threat Classification
+    const threatType = detectThreatVector(req);
+
+    if (threatType) {
+      // Immediately add to local blocklist
+      blockedIPs.add(clientIp);
+
+      // Asynchronously report to Hub with client_id
+      reportThreat(clientIp, threatType, clientId, hubUrl).catch(() => {});
+
+      // Terminate connection with 403 Forbidden
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: `403 Forbidden: Malicious Payload Detected (${threatType})`,
+        client_ip: clientIp,
+        threat_type: threatType
+      });
+    }
+
+    // Pass-through if clean and unbanned
+    next();
+  };
 }
 
-module.exports = {
-  createWafInstance,
-  wafMiddleware,
-  fetchGlobalBlocklist,
-  localBlockedIPs,
-  normalizeIP
-};
+/**
+ * Express Middleware Export supporting both factory config:
+ *   threatShield({ clientId: 'client_A' })
+ * and direct middleware use:
+ *   threatShield(req, res, next)
+ */
+function threatShield(optionsOrReq, res, next) {
+  if (optionsOrReq && optionsOrReq.headers && typeof next === 'function') {
+    return createThreatShieldMiddleware({ clientId: 'default' })(optionsOrReq, res, next);
+  }
+  return createThreatShieldMiddleware(optionsOrReq);
+}
+
+// Backward-compatible exports
+threatShield.createWafInstance = createThreatShieldMiddleware;
+threatShield.wafMiddleware = createThreatShieldMiddleware();
+threatShield.syncBlocklist = syncBlocklist;
+threatShield.fetchGlobalBlocklist = syncBlocklist;
+threatShield.blockedIPs = blockedIPs;
+threatShield.localBlockedIPs = blockedIPs;
+threatShield.normalizeIP = normalizeIP;
+threatShield.detectThreatVector = detectThreatVector;
+
+module.exports = threatShield;
+module.exports.createWafInstance = createThreatShieldMiddleware;
+module.exports.wafMiddleware = createThreatShieldMiddleware();
+module.exports.fetchGlobalBlocklist = syncBlocklist;
+module.exports.localBlockedIPs = blockedIPs;
+module.exports.normalizeIP = normalizeIP;

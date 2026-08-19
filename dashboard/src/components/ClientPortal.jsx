@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { ShieldAlert, ShieldCheck, Key, Lock, Search, RefreshCw, Activity, Terminal } from 'lucide-react';
 
-const HUB_URL = import.meta.env.VITE_HUB_API || 
+const DEFAULT_HUB_URL = import.meta.env.VITE_HUB_API || 
   (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://127.0.0.1:8000'
     : 'https://nexusshield.onrender.com');
 
-export default function ClientPortal({ onBackToAdmin }) {
+export default function ClientPortal({ onBackToAdmin, hubUrl = DEFAULT_HUB_URL }) {
   const [clientIdInput, setClientIdInput] = useState('client_A');
   const [activeClientId, setActiveClientId] = useState('client_A');
   const [clientData, setClientData] = useState(null);
@@ -24,7 +24,7 @@ export default function ClientPortal({ onBackToAdmin }) {
     setErrorMsg(null);
 
     try {
-      const response = await axios.get(`${HUB_URL}/client-stats/${encodeURIComponent(cid.trim())}`, { timeout: 3000 });
+      const response = await axios.get(`${hubUrl}/client-stats/${encodeURIComponent(cid.trim())}`, { timeout: 3000 });
       if (response.data) {
         setClientData(response.data);
         setIsOnline(true);
@@ -36,7 +36,7 @@ export default function ClientPortal({ onBackToAdmin }) {
     } finally {
       setIsLoading(false);
     }
-  }, [activeClientId]);
+  }, [activeClientId, hubUrl]);
 
   // Submit handler for Client ID search form
   const handleLoadClient = (e) => {
@@ -66,46 +66,13 @@ export default function ClientPortal({ onBackToAdmin }) {
   const totalBlocked = clientData?.total_blocked ?? clientData?.stats?.total_blocked ?? recentLogs.length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans pb-12">
+    <div className="text-slate-200 font-sans pb-12">
       
-      {/* Top Header */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          
-          {/* Title & Portal Badge */}
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-700 flex items-center justify-center shadow-lg shadow-cyan-900/30">
-              <Lock className="w-5 h-5 text-slate-950" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold text-white tracking-wide">Client Security Portal</h1>
-                <span className="px-2 py-0.5 text-[10px] font-mono uppercase bg-cyan-950 text-cyan-300 border border-cyan-800/60 rounded">
-                  Read-Only Telemetry
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-mono">Tenant-Isolated Threat Intelligence Dashboard</p>
-            </div>
-          </div>
-
-          {/* Quick Nav back to Admin SOC */}
-          {onBackToAdmin && (
-            <button
-              onClick={onBackToAdmin}
-              className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition-colors border border-slate-700 shadow"
-            >
-              <span>← Switch to Admin SOC</span>
-            </button>
-          )}
-
-        </div>
-      </header>
-
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto pt-2">
         
         {/* Client ID Selection & Search Control Card */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 shadow-xl mb-8">
+        <div className="cyber-card bg-slate-900/90 border border-slate-800 rounded-xl p-6 shadow-xl mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             
             <form onSubmit={handleLoadClient} className="flex-1 flex items-center space-x-3">
@@ -115,7 +82,7 @@ export default function ClientPortal({ onBackToAdmin }) {
                   type="text"
                   value={clientIdInput}
                   onChange={(e) => setClientIdInput(e.target.value)}
-                  placeholder="Enter Client ID (e.g. client_A, client_B)..."
+                  placeholder="Enter Client ID (e.g. client_A, client_B, Site-A)..."
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"
                 />
               </div>
@@ -177,7 +144,7 @@ export default function ClientPortal({ onBackToAdmin }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           
           {/* Total Client Attacks Card */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl hover:border-cyan-800/50 transition-all">
+          <div className="cyber-card bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl hover:border-cyan-800/50 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono">
                 Client Attacks Prevented
@@ -198,7 +165,7 @@ export default function ClientPortal({ onBackToAdmin }) {
           </div>
 
           {/* Active Protection Status */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl hover:border-emerald-800/50 transition-all">
+          <div className="cyber-card bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl hover:border-emerald-800/50 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono">
                 WAF Protection Status
@@ -220,7 +187,7 @@ export default function ClientPortal({ onBackToAdmin }) {
           </div>
 
           {/* Sync & Live Telemetry Card */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl hover:border-blue-800/50 transition-all">
+          <div className="cyber-card bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-xl hover:border-blue-800/50 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono">
                 Active Client Scope
@@ -247,7 +214,7 @@ export default function ClientPortal({ onBackToAdmin }) {
         </div>
 
         {/* Read-Only Client Threat Logs Table */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 shadow-xl">
+        <div className="cyber-card bg-slate-900/90 border border-slate-800 rounded-xl p-6 shadow-xl">
           
           <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
             <div className="flex items-center space-x-2">
@@ -321,7 +288,7 @@ export default function ClientPortal({ onBackToAdmin }) {
 
         </div>
 
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,10 +1,17 @@
 import React from 'react';
-import { Shield, Activity, Terminal, RefreshCw } from 'lucide-react';
+import { Shield, Activity, Terminal, RefreshCw, LayoutDashboard, Lock } from 'lucide-react';
 
-export default function Navbar({ isOnline, lastUpdated, onOpenSimulator, onManualRefresh, isRefreshing }) {
+export default function Navbar({ 
+  isOnline, 
+  currentView = 'admin',
+  onSwitchView,
+  onOpenSimulator, 
+  onManualRefresh, 
+  isRefreshing 
+}) {
   return (
     <header className="border-b border-slate-800 bg-[#0f172a]/90 backdrop-blur-md sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         
         {/* Left Branding */}
         <div className="flex items-center space-x-3">
@@ -17,15 +24,44 @@ export default function Navbar({ isOnline, lastUpdated, onOpenSimulator, onManua
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-bold text-white tracking-tight">NexusShield</h1>
               <span className="px-2 py-0.5 text-xs font-semibold tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-800/60 rounded-full">
-                SOC HUB
+                {currentView === 'admin' ? 'SOC HUB' : 'CLIENT PORTAL'}
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono">Zero-Knowledge Collaborative WAF</p>
           </div>
         </div>
 
+        {/* View Switcher Tabs */}
+        {onSwitchView && (
+          <div className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+            <button
+              onClick={() => onSwitchView('admin')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all ${
+                currentView === 'admin'
+                  ? 'bg-emerald-950 text-emerald-300 font-bold border border-emerald-800/60 shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Admin SOC</span>
+            </button>
+
+            <button
+              onClick={() => onSwitchView('client')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md transition-all ${
+                currentView === 'client'
+                  ? 'bg-cyan-950 text-cyan-300 font-bold border border-cyan-800/60 shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Client Portal</span>
+            </button>
+          </div>
+        )}
+
         {/* Right Status & Actions */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           {/* Connection Badge */}
           <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-mono border ${
             isOnline 
@@ -35,7 +71,7 @@ export default function Navbar({ isOnline, lastUpdated, onOpenSimulator, onManua
             <span className={`w-2 h-2 rounded-full ${
               isOnline ? 'bg-emerald-500 animate-pulse-glow' : 'bg-amber-500'
             }`}></span>
-            <span>{isOnline ? 'Active & Synchronized' : 'Connecting to Threat Hub...'}</span>
+            <span>{isOnline ? 'Active & Synced' : 'Connecting...'}</span>
           </div>
 
           {/* Refresh Button */}
@@ -54,7 +90,7 @@ export default function Navbar({ isOnline, lastUpdated, onOpenSimulator, onManua
             className="flex items-center space-x-2 px-3.5 py-1.5 bg-gradient-to-r from-rose-600 to-crimson-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-rose-900/30 border border-rose-500/40 transition-all hover:scale-105 active:scale-95"
           >
             <Terminal className="w-4 h-4" />
-            <span>Attack Simulator</span>
+            <span className="hidden sm:inline">Attack Simulator</span>
           </button>
         </div>
 

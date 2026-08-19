@@ -3,7 +3,10 @@ import axios from 'axios';
 import { ShieldAlert, Server, Activity, ShieldCheck, UserX, RefreshCw, Flame, Users, LayoutDashboard } from 'lucide-react';
 import ClientPortal from './ClientPortal';
 
-const HUB_URL = 'https://nexusshield.onrender.com';
+const HUB_URL = import.meta.env.VITE_HUB_API || 
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:8000'
+    : 'https://nexusshield.onrender.com');
 
 export default function App() {
   const [currentView, setCurrentView] = useState('admin'); // 'admin' | 'client'

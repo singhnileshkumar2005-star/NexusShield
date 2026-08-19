@@ -6,8 +6,12 @@ import ThreatStream from './components/ThreatStream';
 import AnalyticsSection from './components/AnalyticsSection';
 import BlocklistTable from './components/BlocklistTable';
 import SimulatorModal from './components/SimulatorModal';
+import ClientPortal from './components/ClientPortal';
 
-const HUB_API = 'https://nexusshield.onrender.com';
+const HUB_API = import.meta.env.VITE_HUB_API || 
+  (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://127.0.0.1:8000'
+    : 'https://nexusshield.onrender.com');
 
 // Fallback Mock State when backend is temporarily offline
 const MOCK_FALLBACK = {
@@ -43,6 +47,7 @@ const MOCK_FALLBACK = {
 };
 
 export default function App() {
+  const [currentView, setCurrentView] = useState('admin'); // 'admin' | 'client'
   const [stats, setStats] = useState(MOCK_FALLBACK.stats);
   const [blocklist, setBlocklist] = useState(MOCK_FALLBACK.blocklist);
   const [isOnline, setIsOnline] = useState(false);
@@ -75,10 +80,12 @@ export default function App() {
 
   // Initial load + Automatic 3-Second Background Polling
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 3000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    if (currentView === 'admin') {
+      fetchData();
+      const interval = setInterval(fetchData, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [fetchData, currentView]);
 
   // Unban / Revoke IP Action handler
   const handleUnbanIp = async (ip) => {
@@ -129,6 +136,8 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         isOnline={isOnline}
+        currentView={currentView}
+        onSwitchView={setCurrentView}
         onOpenSimulator={() => setIsSimulatorOpen(true)}
         onManualRefresh={handleManualRefresh}
         isRefreshing={isRefreshing}
@@ -142,7 +151,7 @@ export default function App() {
           <div className="mb-6 p-3 rounded-xl bg-amber-950/50 border border-amber-800/60 text-amber-300 text-xs font-mono flex items-center justify-between shadow-lg">
             <div className="flex items-center space-x-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-              <span><strong>Connecting to Threat Hub...</strong> FastAPI Hub backend is starting or offline at <code>https://nexusshield.onrender.com</code>. Displaying live mock state.</span>
+              <span><strong>Connecting to Threat Hub...</strong> Backend is starting or offline at <code>{HUB_API}</code>. Displaying fallback state.</span>
             </div>
             <button 
               onClick={handleManualRefresh}
@@ -153,24 +162,30 @@ export default function App() {
           </div>
         )}
 
-        {/* 1. Top Metrics Bar (KPI Cards) */}
-        <MetricsBar stats={stats} isOnline={isOnline} />
+        {currentView === 'client' ? (
+          <ClientPortal onBackToAdmin={() => setCurrentView('admin')} hubUrl={HUB_API} />
+        ) : (
+          <>
+            {/* 1. Top Metrics Bar (KPI Cards) */}
+            <MetricsBar stats={stats} isOnline={isOnline} />
 
-        {/* 2. Real-Time Threat Stream (Terminal / Live Feed Log) */}
-        <ThreatStream events={stats?.recent_events || []} />
+            {/* 2. Real-Time Threat Stream (Terminal / Live Feed Log) */}
+            <ThreatStream events={stats?.recent_events || []} />
 
-        {/* 3. Analytics & Visualization Section */}
-        <AnalyticsSection 
-          distribution={stats?.attack_distribution} 
-          overTime={stats?.attacks_over_time} 
-        />
+            {/* 3. Analytics & Visualization Section */}
+            <AnalyticsSection 
+              distribution={stats?.attack_distribution} 
+              overTime={stats?.attacks_over_time} 
+            />
 
-        {/* 4. Global Blocklist Management Table */}
-        <BlocklistTable 
-          blocklist={blocklist} 
-          onUnban={handleUnbanIp}
-          isUnbanningIp={isUnbanningIp}
-        />
+            {/* 4. Global Blocklist Management Table */}
+            <BlocklistTable 
+              blocklist={blocklist} 
+              onUnban={handleUnbanIp}
+              isUnbanningIp={isUnbanningIp}
+            />
+          </>
+        )}
 
       </main>
 
@@ -179,6 +194,7 @@ export default function App() {
         isOpen={isSimulatorOpen}
         onClose={() => setIsSimulatorOpen(false)}
         onRefreshData={fetchData}
+        hubApi={HUB_API}
       />
 
     </div>

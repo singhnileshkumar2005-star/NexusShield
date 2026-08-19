@@ -2,23 +2,28 @@ const axios = require('axios');
 
 // Local in-memory Set of blocked IPs
 const blockedIPs = new Set();
-const HUB_URL = 'https://nexusshield.onrender.com';
+const DEFAULT_HUB_URL = process.env.HUB_URL || 'http://127.0.0.1:8000';
 const SYNC_INTERVAL_MS = 2000; // 2 seconds
 
 // Advanced Threat Detection Regex Patterns
 const SQLI_PATTERNS = [
   /'\s*or\s*['"]?1['"]?\s*=\s*['"]?1/i,  // ' OR 1=1, ' OR '1'='1
-  /union\s+select/i,                    // UNION SELECT
-  /--/,                                 // SQL Comment --
-  /#/                                   // SQL Comment #
+  /union\s+(all\s+)?select/i,           // UNION SELECT, UNION ALL SELECT
+  /;\s*drop\s+table/i,                 // ; DROP TABLE
+  /'\s*or\s*['"]?[a-z0-9]+['"]?\s*=\s*['"]?[a-z0-9]+/i, // ' OR 'a'='a'
+  /exec(\s|\+)+(s|x)p\w+/i,            // exec xp_cmdshell
+  /insert\s+into/i,                    // INSERT INTO
+  /delete\s+from/i,                     // DELETE FROM
+  /--/,                                // SQL Comment --
+  /#/                                  // SQL Comment #
 ];
 
 const XSS_PATTERNS = [
-  /(<script>)|(javascript:)|(onerror=)|(onload=)/i
+  /(<script>)|(javascript:)|(onerror=)|(onload=)|(<img\s+src=)|(alert\()/i
 ];
 
 const PATH_TRAVERSAL_PATTERNS = [
-  /(\.\.\/)|(\.\.\\)/i
+  /(\.\.\/)|(\.\.\\)|(%2e%2e%2f)|(%2e%2e\/)/i
 ];
 
 /**
@@ -37,11 +42,11 @@ function normalizeIP(rawIp) {
 }
 
 /**
- * Synchronizes local blocked IPs set with FastAPI Hub every 2 seconds
+ * Synchronizes local blocked IPs set with FastAPI Hub
  */
-async function syncBlocklist() {
+async function syncBlocklist(hubUrl = DEFAULT_HUB_URL) {
   try {
-    const response = await axios.get(`${HUB_URL}/blocklist`, { timeout: 3000 });
+    const response = await axios.get(`${hubUrl}/blocklist`, { timeout: 3000 });
     if (response.data && Array.isArray(response.data.blocked_ips)) {
       const serverBlocklist = response.data.blocked_ips.map(item => {
         const rawIp = typeof item === 'object' && item !== null ? item.ip : item;
@@ -60,7 +65,7 @@ async function syncBlocklist() {
 
 // Start background sync loop
 syncBlocklist();
-const syncInterval = setInterval(syncBlocklist, SYNC_INTERVAL_MS);
+const syncInterval = setInterval(() => syncBlocklist(process.env.HUB_URL || DEFAULT_HUB_URL), SYNC_INTERVAL_MS);
 if (syncInterval.unref) {
   syncInterval.unref();
 }
@@ -68,9 +73,9 @@ if (syncInterval.unref) {
 /**
  * Asynchronously sends threat report to FastAPI Hub
  */
-async function reportThreat(ipAddress, attackType, clientId = 'default') {
+async function reportThreat(ipAddress, attackType, clientId = 'default', hubUrl = DEFAULT_HUB_URL) {
   try {
-    await axios.post(`${HUB_URL}/report`, {
+    await axios.post(`${hubUrl}/report`, {
       ip_address: ipAddress,
       client_id: clientId,
       attack_type: attackType
@@ -81,22 +86,56 @@ async function reportThreat(ipAddress, attackType, clientId = 'default') {
 }
 
 /**
- * Inspects URL string and returns detected attack vector name or null
+ * Inspects a string target for threat patterns
  */
-function detectThreatVector(urlStr) {
-  if (!urlStr) return null;
-  const decodedUrl = decodeURIComponent(urlStr);
+function inspectString(str) {
+  if (!str || typeof str !== 'string') return null;
+  let decoded = str;
+  try {
+    decoded = decodeURIComponent(str);
+  } catch (e) {
+    decoded = str;
+  }
 
-  if (SQLI_PATTERNS.some(p => p.test(decodedUrl))) {
+  if (SQLI_PATTERNS.some(p => p.test(decoded))) {
     return 'SQL Injection';
   }
-
-  if (XSS_PATTERNS.some(p => p.test(decodedUrl))) {
+  if (XSS_PATTERNS.some(p => p.test(decoded))) {
     return 'Cross-Site Scripting';
   }
-
-  if (PATH_TRAVERSAL_PATTERNS.some(p => p.test(decodedUrl))) {
+  if (PATH_TRAVERSAL_PATTERNS.some(p => p.test(decoded))) {
     return 'Path Traversal';
+  }
+  return null;
+}
+
+/**
+ * Inspects incoming request (URL, query, body, and headers) for malicious vectors
+ */
+function detectThreatVector(req) {
+  if (!req) return null;
+
+  // 1. Inspect URL & Query
+  const urlStr = req.originalUrl || req.url || '';
+  const urlThreat = inspectString(urlStr);
+  if (urlThreat) return urlThreat;
+
+  // 2. Inspect Request Body (if parsed or raw)
+  if (req.body) {
+    const bodyStr = typeof req.body === 'object' ? JSON.stringify(req.body) : String(req.body);
+    const bodyThreat = inspectString(bodyStr);
+    if (bodyThreat) return bodyThreat;
+  }
+
+  // 3. Inspect Headers
+  if (req.headers) {
+    const headerTargets = ['user-agent', 'referer', 'x-custom-payload'];
+    for (const h of headerTargets) {
+      if (req.headers[h]) {
+        const headerThreat = inspectString(String(req.headers[h]));
+        if (headerThreat) return headerThreat;
+      }
+    }
   }
 
   return null;
@@ -107,10 +146,13 @@ function detectThreatVector(urlStr) {
  */
 function createThreatShieldMiddleware(config = {}) {
   let clientId = 'default';
+  let hubUrl = process.env.HUB_URL || DEFAULT_HUB_URL;
+
   if (typeof config === 'string') {
     clientId = config;
-  } else if (config && config.clientId) {
-    clientId = config.clientId;
+  } else if (config && typeof config === 'object') {
+    if (config.clientId) clientId = config.clientId;
+    if (config.hubUrl) hubUrl = config.hubUrl;
   }
 
   return function threatShieldHandler(req, res, next) {
@@ -119,22 +161,30 @@ function createThreatShieldMiddleware(config = {}) {
 
     // Defense Rule A: Global Blocklist Enforcement
     if (blockedIPs.has(clientIp)) {
-      return res.status(403).send("403 Forbidden: IP Globally Banned by NexusShield");
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: '403 Forbidden: IP Globally Banned by NexusShield',
+        client_ip: clientIp
+      });
     }
 
     // Defense Rule B: Payload Detection & Threat Classification
-    const requestUrl = req.originalUrl || req.url || '';
-    const threatType = detectThreatVector(requestUrl);
+    const threatType = detectThreatVector(req);
 
     if (threatType) {
       // Immediately add to local blocklist
       blockedIPs.add(clientIp);
 
       // Asynchronously report to Hub with client_id
-      reportThreat(clientIp, threatType, clientId).catch(() => {});
+      reportThreat(clientIp, threatType, clientId, hubUrl).catch(() => {});
 
       // Terminate connection with 403 Forbidden
-      return res.status(403).send("403 Forbidden: Malicious Payload Detected");
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: `403 Forbidden: Malicious Payload Detected (${threatType})`,
+        client_ip: clientIp,
+        threat_type: threatType
+      });
     }
 
     // Pass-through if clean and unbanned
@@ -154,5 +204,15 @@ function threatShield(optionsOrReq, res, next) {
   }
   return createThreatShieldMiddleware(optionsOrReq);
 }
+
+// Backward-compatible exports
+threatShield.createWafInstance = createThreatShieldMiddleware;
+threatShield.wafMiddleware = createThreatShieldMiddleware();
+threatShield.syncBlocklist = syncBlocklist;
+threatShield.fetchGlobalBlocklist = syncBlocklist;
+threatShield.blockedIPs = blockedIPs;
+threatShield.localBlockedIPs = blockedIPs;
+threatShield.normalizeIP = normalizeIP;
+threatShield.detectThreatVector = detectThreatVector;
 
 module.exports = threatShield;

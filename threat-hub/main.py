@@ -75,7 +75,7 @@ app.add_middleware(
 
 class ReportPayload(BaseModel):
     ip_address: str
-    client_id: str
+    client_id: Optional[str] = "default"
     attack_type: Optional[str] = "SQL Injection"
     node: Optional[str] = "Site-A"
 
@@ -88,8 +88,8 @@ def get_db_connection():
 def read_root():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(ip) FROM blocks")
-    total = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(DISTINCT ip) FROM blocks")
+    total = cursor.fetchone()[0] or 0
     conn.close()
     return {
         "service": "NexusShield Threat Hub (SQLite)",
@@ -127,8 +127,8 @@ def report_attack(payload: ReportPayload):
     
     conn.commit()
     
-    cursor.execute("SELECT COUNT(ip) FROM blocks")
-    total = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(DISTINCT ip) FROM blocks")
+    total = cursor.fetchone()[0] or 0
     conn.close()
 
     logger.warning(f"[NEW THREAT REPORTED] IP: {ip} | Client: {client_id} | Type: {attack_type}")
@@ -165,13 +165,55 @@ def get_blocklist():
 def get_stats():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(ip) FROM blocks")
-    total = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(DISTINCT ip) FROM blocks")
+    total_blocked = cursor.fetchone()[0] or 0
+
+    cursor.execute("SELECT COUNT(id) FROM attacks")
+    attacks_total = cursor.fetchone()[0] or total_blocked
+
+    cursor.execute("SELECT COUNT(DISTINCT client_id) FROM blocks")
+    distinct_clients = cursor.fetchone()[0] or 1
+    active_spokes = max(2, distinct_clients)
+
+    # Dynamic attack vector distribution
+    cursor.execute("SELECT attack_type, COUNT(id) as count FROM attacks GROUP BY attack_type")
+    dist_rows = cursor.fetchall()
+    if dist_rows:
+        attack_distribution = [{"name": row["attack_type"], "value": row["count"]} for row in dist_rows]
+    else:
+        cursor.execute("SELECT attack_type, COUNT(ip) as count FROM blocks GROUP BY attack_type")
+        block_dist_rows = cursor.fetchall()
+        attack_distribution = [{"name": row["attack_type"], "value": row["count"]} for row in block_dist_rows] if block_dist_rows else [
+            {"name": "SQL Injection", "value": 1},
+            {"name": "Cross-Site Scripting", "value": 1},
+            {"name": "Path Traversal", "value": 1}
+        ]
+
+    # Recent Event Stream
+    cursor.execute("SELECT id, ip, attack_type, timestamp, client_id FROM attacks ORDER BY id DESC LIMIT 50")
+    attack_rows = cursor.fetchall()
+    recent_events = [
+        {
+            "id": row["id"],
+            "ip": row["ip"],
+            "attack_type": row["attack_type"],
+            "timestamp": row["timestamp"],
+            "node": row["client_id"],
+            "status": "Blocked"
+        }
+        for row in attack_rows
+    ]
+
     conn.close()
     
     return {
-        "total_blocked": total,
-        "active_spokes": 2
+        "total_blocked": total_blocked,
+        "attacks_today": attacks_total,
+        "active_spokes": active_spokes,
+        "network_status": "Active & Synchronized",
+        "attack_distribution": attack_distribution,
+        "recent_events": recent_events
     }
 
 @app.get("/client-stats/{client_id}")
@@ -193,11 +235,12 @@ def get_client_stats(client_id: str = Path(..., description="The client ID to re
         for row in rows
     ]
 
-    cursor.execute("SELECT ip, attack_type, timestamp, client_id FROM attacks WHERE client_id = ? ORDER BY id DESC LIMIT 50", (cid,))
+    cursor.execute("SELECT id, ip, attack_type, timestamp, client_id FROM attacks WHERE client_id = ? ORDER BY id DESC LIMIT 50", (cid,))
     attack_rows = cursor.fetchall()
 
     recent_logs = [
         {
+            "id": row["id"],
             "ip": row["ip"],
             "attack_type": row["attack_type"],
             "timestamp": row["timestamp"],
@@ -207,14 +250,17 @@ def get_client_stats(client_id: str = Path(..., description="The client ID to re
     ] if attack_rows else blocked_ips
 
     total_blocked = len(blocked_ips)
+    attacks_count = len(attack_rows) if attack_rows else total_blocked
 
     conn.close()
 
     return {
         "client_id": cid,
         "total_blocked": total_blocked,
+        "attacks_count": attacks_count,
         "stats": {
             "total_blocked": total_blocked,
+            "attacks_count": attacks_count,
             "active_spokes": 1
         },
         "blocked_ips": blocked_ips,
@@ -232,8 +278,8 @@ def unban_ip(ip_address: str = Path(..., description="The IP address to unban"))
     deleted = cursor.rowcount
     conn.commit()
     
-    cursor.execute("SELECT COUNT(ip) FROM blocks")
-    total = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(DISTINCT ip) FROM blocks")
+    total = cursor.fetchone()[0] or 0
     conn.close()
 
     if deleted > 0:
