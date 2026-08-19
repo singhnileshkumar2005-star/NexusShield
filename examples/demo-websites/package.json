@@ -1,0 +1,23 @@
+{
+  "name": "nexussecure-demo-websites",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sample protected websites and interactive attack simulator for NexusSecure mesh verification",
+  "scripts": {
+    "start:site-a": "tsx site-a.ts",
+    "start:site-b": "tsx site-b.ts",
+    "start:all": "concurrently \"npm run start:site-a\" \"npm run start:site-b\"",
+    "test:sim": "tsx simulate-attack.ts"
+  },
+  "dependencies": {
+    "@nexussecure/agent": "*",
+    "express": "^4.19.2",
+    "tsx": "^4.11.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,19 +1,24 @@
 {
-  "name": "nexusshield",
+  "name": "nexussecure-monorepo",
   "version": "1.0.0",
-  "description": "Zero-Knowledge Collaborative Web Application Firewall (WAF) & SOC Platform",
-  "main": "nexus-client/middleware.js",
+  "private": true,
+  "description": "NexusSecure: Collaborative Attack-Defense Threat Intelligence Mesh for Websites",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "examples/*"
+  ],
   "scripts": {
-    "start": "node nexus-client/siteA.js",
-    "start:hub": "python hub/main.py",
-    "start:siteA": "node nexus-client/siteA.js",
-    "start:siteB": "node nexus-client/siteB.js",
-    "start:dashboard": "cd dashboard && npm run dev",
-    "build:dashboard": "cd dashboard && npm run build",
-    "test": "python attack.py"
+    "dev:hub": "npm --workspace=apps/hub run dev",
+    "dev:admin": "npm --workspace=apps/admin-dashboard run dev",
+    "dev:portal": "npm --workspace=apps/site-portal run dev",
+    "dev:all": "concurrently \"npm run dev:hub\" \"npm run dev:admin\" \"npm run dev:portal\"",
+    "build": "npm run build --workspaces --if-present",
+    "test:sim": "npm --workspace=examples/demo-websites run test:sim",
+    "start:demo": "npm --workspace=examples/demo-websites run start:all"
   },
-  "dependencies": {
-    "axios": "^1.6.8",
-    "express": "^4.19.2"
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
   }
 }
