@@ -7,7 +7,9 @@ const DEFAULT_HUB_URL = import.meta.env.VITE_HUB_API ||
     ? 'http://127.0.0.1:8000'
     : 'https://nexusshield.onrender.com');
 
-export default function ClientPortal({ onBackToAdmin, hubUrl = DEFAULT_HUB_URL }) {
+const DEFAULT_API_KEY = import.meta.env.VITE_NEXUS_API_KEY || 'nexus_dev_key_2026';
+
+export default function ClientPortal({ onBackToAdmin, hubUrl = DEFAULT_HUB_URL, apiKey = DEFAULT_API_KEY }) {
   const [clientIdInput, setClientIdInput] = useState('client_A');
   const [activeClientId, setActiveClientId] = useState('client_A');
   const [clientData, setClientData] = useState(null);
@@ -24,19 +26,22 @@ export default function ClientPortal({ onBackToAdmin, hubUrl = DEFAULT_HUB_URL }
     setErrorMsg(null);
 
     try {
-      const response = await axios.get(`${hubUrl}/client-stats/${encodeURIComponent(cid.trim())}`, { timeout: 3000 });
+      const response = await axios.get(`${hubUrl}/client-stats/${encodeURIComponent(cid.trim())}`, {
+        headers: { 'x-api-key': apiKey },
+        timeout: 3000
+      });
       if (response.data) {
         setClientData(response.data);
         setIsOnline(true);
       }
     } catch (err) {
       console.error(`Failed to fetch client stats for ${cid}:`, err);
-      setErrorMsg(`Could not connect or fetch telemetry for Client ID "${cid}". Ensure backend is live.`);
+      setErrorMsg(`Could not connect or fetch telemetry for Client ID "${cid}". Ensure backend is live and API Key is valid.`);
       setIsOnline(false);
     } finally {
       setIsLoading(false);
     }
-  }, [activeClientId, hubUrl]);
+  }, [activeClientId, hubUrl, apiKey]);
 
   // Submit handler for Client ID search form
   const handleLoadClient = (e) => {

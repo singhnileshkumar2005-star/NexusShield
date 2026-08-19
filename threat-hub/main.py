@@ -1,8 +1,8 @@
-from fastapi import FastAPI, HTTPException, Path
+from fastapi import FastAPI, HTTPException, Path, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
 import os
 import logging
@@ -12,8 +12,15 @@ logger = logging.getLogger("NexusShield-Hub")
 
 DB_FILE = os.path.join(os.path.dirname(__file__), "nexus.db")
 
+# Security Configuration
+NEXUS_API_KEY = os.environ.get("NEXUS_API_KEY", "nexus_dev_key_2026")
+NEXUS_ADMIN_TOKEN = os.environ.get("NEXUS_ADMIN_TOKEN", "nexus_admin_secret_2026")
+BAN_TTL_HOURS = int(os.environ.get("BAN_TTL_HOURS", "24"))
+
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_FILE, timeout=10.0)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout = 5000;")
     cursor = conn.cursor()
     
     cursor.execute("""
@@ -21,6 +28,7 @@ def init_db():
             ip TEXT,
             attack_type TEXT,
             timestamp DATETIME,
+            expires_at DATETIME,
             client_id TEXT DEFAULT 'default',
             PRIMARY KEY (ip, client_id)
         )
@@ -31,6 +39,7 @@ def init_db():
             ip TEXT,
             attack_type TEXT,
             timestamp DATETIME,
+            expires_at DATETIME,
             client_id TEXT DEFAULT 'default',
             PRIMARY KEY (ip, client_id)
         )
@@ -46,24 +55,26 @@ def init_db():
         )
     """)
 
-    # Backward compatibility: Add client_id column if tables already exist without it
+    # Schema migration checks
     for table in ["blocks", "blocklist", "attacks"]:
         try:
             cursor.execute(f"PRAGMA table_info({table})")
             columns = [row[1] for row in cursor.fetchall()]
             if columns and "client_id" not in columns:
                 cursor.execute(f"ALTER TABLE {table} ADD COLUMN client_id TEXT DEFAULT 'default'")
+            if table in ["blocks", "blocklist"] and columns and "expires_at" not in columns:
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN expires_at DATETIME")
         except Exception as e:
             logger.warning(f"[Migration] Could not migrate table {table}: {e}")
 
     conn.commit()
     conn.close()
-    logger.info(f"[Database] SQLite database initialized at {DB_FILE}")
+    logger.info(f"[Database] SQLite database initialized in WAL mode at {DB_FILE}")
 
 # Initialize SQLite database on startup
 init_db()
 
-app = FastAPI(title="NexusShield Threat Hub (SQLite Persistence)")
+app = FastAPI(title="NexusShield Threat Hub (Hardened with Auth & TTL)")
 
 app.add_middleware(
     CORSMiddleware,
@@ -80,45 +91,71 @@ class ReportPayload(BaseModel):
     node: Optional[str] = "Site-A"
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_FILE, timeout=10.0)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout = 5000;")
     conn.row_factory = sqlite3.Row
     return conn
+
+# Security Dependency Functions
+def verify_api_key(x_api_key: Optional[str] = Header(None)):
+    if not x_api_key or (x_api_key != NEXUS_API_KEY and x_api_key != NEXUS_ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Unauthorized: Invalid or missing X-API-Key")
+    return x_api_key
+
+def verify_admin_token(
+    authorization: Optional[str] = Header(None),
+    x_admin_token: Optional[str] = Header(None)
+):
+    token = x_admin_token
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split("Bearer ")[1].strip()
+    if not token or token != NEXUS_ADMIN_TOKEN:
+        raise HTTPException(status_code=403, detail="Forbidden: Admin authentication token required")
+    return token
 
 @app.get("/")
 def read_root():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(DISTINCT ip) FROM blocks")
+    cursor.execute("""
+        SELECT COUNT(DISTINCT ip) FROM blocks 
+        WHERE expires_at IS NULL OR expires_at > datetime('now', 'localtime')
+    """)
     total = cursor.fetchone()[0] or 0
     conn.close()
     return {
-        "service": "NexusShield Threat Hub (SQLite)",
+        "service": "NexusShield Threat Hub (Hardened)",
         "status": "online",
-        "total_blocked": total
+        "total_blocked": total,
+        "ban_ttl_hours": BAN_TTL_HOURS
     }
 
 @app.post("/report")
-def report_attack(payload: ReportPayload):
+def report_attack(payload: ReportPayload, _auth: str = Depends(verify_api_key)):
     ip = payload.ip_address.strip()
     client_id = payload.client_id.strip() if payload.client_id else "default"
     if not ip:
         raise HTTPException(status_code=400, detail="Invalid IP address")
     
     attack_type = payload.attack_type or "SQL Injection"
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_dt = datetime.now()
+    now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+    expires_dt = now_dt + timedelta(hours=BAN_TTL_HOURS)
+    expires_str = expires_dt.strftime("%Y-%m-%d %H:%M:%S")
 
     conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute("""
-        INSERT OR REPLACE INTO blocks (ip, attack_type, timestamp, client_id)
-        VALUES (?, ?, ?, ?)
-    """, (ip, attack_type, now_str, client_id))
+        INSERT OR REPLACE INTO blocks (ip, attack_type, timestamp, expires_at, client_id)
+        VALUES (?, ?, ?, ?, ?)
+    """, (ip, attack_type, now_str, expires_str, client_id))
 
     cursor.execute("""
-        INSERT OR REPLACE INTO blocklist (ip, attack_type, timestamp, client_id)
-        VALUES (?, ?, ?, ?)
-    """, (ip, attack_type, now_str, client_id))
+        INSERT OR REPLACE INTO blocklist (ip, attack_type, timestamp, expires_at, client_id)
+        VALUES (?, ?, ?, ?, ?)
+    """, (ip, attack_type, now_str, expires_str, client_id))
 
     cursor.execute("""
         INSERT INTO attacks (ip, attack_type, timestamp, client_id)
@@ -127,15 +164,19 @@ def report_attack(payload: ReportPayload):
     
     conn.commit()
     
-    cursor.execute("SELECT COUNT(DISTINCT ip) FROM blocks")
+    cursor.execute("""
+        SELECT COUNT(DISTINCT ip) FROM blocks 
+        WHERE expires_at IS NULL OR expires_at > datetime('now', 'localtime')
+    """)
     total = cursor.fetchone()[0] or 0
     conn.close()
 
-    logger.warning(f"[NEW THREAT REPORTED] IP: {ip} | Client: {client_id} | Type: {attack_type}")
+    logger.warning(f"[NEW THREAT REPORTED] IP: {ip} | Client: {client_id} | Type: {attack_type} | Expires: {expires_str}")
 
     return {
         "status": "success",
         "message": f"IP {ip} registered in blocklist for client {client_id}",
+        "expires_at": expires_str,
         "total_blocked": total
     }
 
@@ -143,7 +184,13 @@ def report_attack(payload: ReportPayload):
 def get_blocklist():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT ip, attack_type, timestamp, client_id FROM blocks ORDER BY rowid DESC")
+    
+    # Return active non-expired bans
+    cursor.execute("""
+        SELECT ip, attack_type, timestamp, expires_at, client_id FROM blocks 
+        WHERE expires_at IS NULL OR expires_at > datetime('now', 'localtime')
+        ORDER BY rowid DESC
+    """)
     rows = cursor.fetchall()
     conn.close()
 
@@ -152,6 +199,7 @@ def get_blocklist():
             "ip": row["ip"],
             "attack_type": row["attack_type"],
             "timestamp": row["timestamp"],
+            "expires_at": row["expires_at"] if "expires_at" in row.keys() else None,
             "client_id": row["client_id"] if "client_id" in row.keys() else "default"
         }
         for row in rows
@@ -166,7 +214,10 @@ def get_stats():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT COUNT(DISTINCT ip) FROM blocks")
+    cursor.execute("""
+        SELECT COUNT(DISTINCT ip) FROM blocks
+        WHERE expires_at IS NULL OR expires_at > datetime('now', 'localtime')
+    """)
     total_blocked = cursor.fetchone()[0] or 0
 
     cursor.execute("SELECT COUNT(id) FROM attacks")
@@ -217,12 +268,19 @@ def get_stats():
     }
 
 @app.get("/client-stats/{client_id}")
-def get_client_stats(client_id: str = Path(..., description="The client ID to retrieve stats for")):
+def get_client_stats(
+    client_id: str = Path(..., description="The client ID to retrieve stats for"),
+    _auth: str = Depends(verify_api_key)
+):
     cid = client_id.strip()
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT ip, attack_type, timestamp, client_id FROM blocks WHERE client_id = ? ORDER BY rowid DESC", (cid,))
+    cursor.execute("""
+        SELECT ip, attack_type, timestamp, expires_at, client_id FROM blocks 
+        WHERE client_id = ? AND (expires_at IS NULL OR expires_at > datetime('now', 'localtime'))
+        ORDER BY rowid DESC
+    """, (cid,))
     rows = cursor.fetchall()
     
     blocked_ips = [
@@ -230,6 +288,7 @@ def get_client_stats(client_id: str = Path(..., description="The client ID to re
             "ip": row["ip"],
             "attack_type": row["attack_type"],
             "timestamp": row["timestamp"],
+            "expires_at": row["expires_at"] if "expires_at" in row.keys() else None,
             "client_id": row["client_id"]
         }
         for row in rows
@@ -269,7 +328,10 @@ def get_client_stats(client_id: str = Path(..., description="The client ID to re
     }
 
 @app.delete("/unban/{ip_address}")
-def unban_ip(ip_address: str = Path(..., description="The IP address to unban")):
+def unban_ip(
+    ip_address: str = Path(..., description="The IP address to unban"),
+    _auth: str = Depends(verify_admin_token)
+):
     ip = ip_address.strip()
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -278,7 +340,10 @@ def unban_ip(ip_address: str = Path(..., description="The IP address to unban"))
     deleted = cursor.rowcount
     conn.commit()
     
-    cursor.execute("SELECT COUNT(DISTINCT ip) FROM blocks")
+    cursor.execute("""
+        SELECT COUNT(DISTINCT ip) FROM blocks
+        WHERE expires_at IS NULL OR expires_at > datetime('now', 'localtime')
+    """)
     total = cursor.fetchone()[0] or 0
     conn.close()
 
@@ -297,7 +362,7 @@ def unban_ip(ip_address: str = Path(..., description="The IP address to unban"))
         }
 
 @app.post("/clear")
-def clear_blocklist():
+def clear_blocklist(_auth: str = Depends(verify_admin_token)):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM blocks")

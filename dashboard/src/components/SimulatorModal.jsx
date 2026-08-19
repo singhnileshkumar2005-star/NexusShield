@@ -7,7 +7,9 @@ const DEFAULT_HUB_API = import.meta.env.VITE_HUB_API ||
     ? 'http://127.0.0.1:8000'
     : 'https://nexusshield.onrender.com');
 
-export default function SimulatorModal({ isOpen, onClose, onRefreshData, hubApi = DEFAULT_HUB_API }) {
+const DEFAULT_API_KEY = import.meta.env.VITE_NEXUS_API_KEY || 'nexus_dev_key_2026';
+
+export default function SimulatorModal({ isOpen, onClose, onRefreshData, hubApi = DEFAULT_HUB_API, apiKey = DEFAULT_API_KEY }) {
   const [targetUrl, setTargetUrl] = useState('http://127.0.0.1:3000');
   const [nodeName, setNodeName] = useState('Site-A');
   const [attackType, setAttackType] = useState('SQL Injection');
@@ -50,6 +52,8 @@ export default function SimulatorModal({ isOpen, onClose, onRefreshData, hubApi 
           client_id: nodeName,
           attack_type: attackType,
           node: nodeName
+        }, {
+          headers: { 'x-api-key': apiKey }
         });
         setLogs(prev => [
           ...prev, 
@@ -76,6 +80,8 @@ export default function SimulatorModal({ isOpen, onClose, onRefreshData, hubApi 
               client_id: nodeName,
               attack_type: attackType,
               node: nodeName
+            }, {
+              headers: { 'x-api-key': apiKey }
             });
             setLogs(prev => [
               ...prev,

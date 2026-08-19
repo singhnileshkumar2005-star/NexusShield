@@ -3,6 +3,7 @@ const axios = require('axios');
 // Local in-memory Set of blocked IPs
 const blockedIPs = new Set();
 const DEFAULT_HUB_URL = process.env.HUB_URL || 'http://127.0.0.1:8000';
+const DEFAULT_API_KEY = process.env.NEXUS_API_KEY || 'nexus_dev_key_2026';
 const SYNC_INTERVAL_MS = 2000; // 2 seconds
 
 // Advanced Threat Detection Regex Patterns
@@ -14,16 +15,17 @@ const SQLI_PATTERNS = [
   /exec(\s|\+)+(s|x)p\w+/i,            // exec xp_cmdshell
   /insert\s+into/i,                    // INSERT INTO
   /delete\s+from/i,                     // DELETE FROM
-  /--/,                                // SQL Comment --
+  /(?:--[\s\r\n]|--$)/,                // SQL Comment --
+  /(?:\/\*[\s\S]*?\*\/)/,              // SQL inline comment /* ... */
   /#/                                  // SQL Comment #
 ];
 
 const XSS_PATTERNS = [
-  /(<script>)|(javascript:)|(onerror=)|(onload=)|(<img\s+src=)|(alert\()/i
+  /(<script[\s>])|(javascript:)|(onerror\s*=)|(onload\s*=)|(<img\s+[^>]*src=)|(alert\()/i
 ];
 
 const PATH_TRAVERSAL_PATTERNS = [
-  /(\.\.\/)|(\.\.\\)|(%2e%2e%2f)|(%2e%2e\/)/i
+  /(\.\.\/)|(\.\.\\)|(%2e%2e%2f)|(%2e%2e\/)|(%2e%2e\\)/i
 ];
 
 /**
@@ -44,9 +46,12 @@ function normalizeIP(rawIp) {
 /**
  * Synchronizes local blocked IPs set with FastAPI Hub
  */
-async function syncBlocklist(hubUrl = DEFAULT_HUB_URL) {
+async function syncBlocklist(hubUrl = DEFAULT_HUB_URL, apiKey = DEFAULT_API_KEY) {
   try {
-    const response = await axios.get(`${hubUrl}/blocklist`, { timeout: 3000 });
+    const response = await axios.get(`${hubUrl}/blocklist`, {
+      headers: { 'x-api-key': apiKey },
+      timeout: 3000
+    });
     if (response.data && Array.isArray(response.data.blocked_ips)) {
       const serverBlocklist = response.data.blocked_ips.map(item => {
         const rawIp = typeof item === 'object' && item !== null ? item.ip : item;
@@ -65,7 +70,12 @@ async function syncBlocklist(hubUrl = DEFAULT_HUB_URL) {
 
 // Start background sync loop
 syncBlocklist();
-const syncInterval = setInterval(() => syncBlocklist(process.env.HUB_URL || DEFAULT_HUB_URL), SYNC_INTERVAL_MS);
+const syncInterval = setInterval(() => {
+  const currentHubUrl = process.env.HUB_URL || DEFAULT_HUB_URL;
+  const currentApiKey = process.env.NEXUS_API_KEY || DEFAULT_API_KEY;
+  syncBlocklist(currentHubUrl, currentApiKey);
+}, SYNC_INTERVAL_MS);
+
 if (syncInterval.unref) {
   syncInterval.unref();
 }
@@ -73,13 +83,16 @@ if (syncInterval.unref) {
 /**
  * Asynchronously sends threat report to FastAPI Hub
  */
-async function reportThreat(ipAddress, attackType, clientId = 'default', hubUrl = DEFAULT_HUB_URL) {
+async function reportThreat(ipAddress, attackType, clientId = 'default', hubUrl = DEFAULT_HUB_URL, apiKey = DEFAULT_API_KEY) {
   try {
     await axios.post(`${hubUrl}/report`, {
       ip_address: ipAddress,
       client_id: clientId,
       attack_type: attackType
-    }, { timeout: 3000 });
+    }, {
+      headers: { 'x-api-key': apiKey },
+      timeout: 3000
+    });
   } catch (error) {
     // Handle error gracefully
   }
@@ -147,12 +160,14 @@ function detectThreatVector(req) {
 function createThreatShieldMiddleware(config = {}) {
   let clientId = 'default';
   let hubUrl = process.env.HUB_URL || DEFAULT_HUB_URL;
+  let apiKey = process.env.NEXUS_API_KEY || DEFAULT_API_KEY;
 
   if (typeof config === 'string') {
     clientId = config;
   } else if (config && typeof config === 'object') {
     if (config.clientId) clientId = config.clientId;
     if (config.hubUrl) hubUrl = config.hubUrl;
+    if (config.apiKey) apiKey = config.apiKey;
   }
 
   return function threatShieldHandler(req, res, next) {
@@ -175,8 +190,8 @@ function createThreatShieldMiddleware(config = {}) {
       // Immediately add to local blocklist
       blockedIPs.add(clientIp);
 
-      // Asynchronously report to Hub with client_id
-      reportThreat(clientIp, threatType, clientId, hubUrl).catch(() => {});
+      // Asynchronously report to Hub with client_id and auth key
+      reportThreat(clientIp, threatType, clientId, hubUrl, apiKey).catch(() => {});
 
       // Terminate connection with 403 Forbidden
       return res.status(403).json({
@@ -216,6 +231,7 @@ threatShield.normalizeIP = normalizeIP;
 threatShield.detectThreatVector = detectThreatVector;
 
 module.exports = threatShield;
+
 module.exports.createWafInstance = createThreatShieldMiddleware;
 module.exports.wafMiddleware = createThreatShieldMiddleware();
 module.exports.fetchGlobalBlocklist = syncBlocklist;

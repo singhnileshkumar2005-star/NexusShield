@@ -13,6 +13,9 @@ const HUB_API = import.meta.env.VITE_HUB_API ||
     ? 'http://127.0.0.1:8000'
     : 'https://nexusshield.onrender.com');
 
+const API_KEY = import.meta.env.VITE_NEXUS_API_KEY || 'nexus_dev_key_2026';
+const ADMIN_TOKEN = import.meta.env.VITE_NEXUS_ADMIN_TOKEN || 'nexus_admin_secret_2026';
+
 // Fallback Mock State when backend is temporarily offline
 const MOCK_FALLBACK = {
   stats: {
@@ -59,8 +62,8 @@ export default function App() {
   const fetchData = useCallback(async () => {
     try {
       const [statsRes, blocklistRes] = await Promise.all([
-        axios.get(`${HUB_API}/stats`, { timeout: 2500 }),
-        axios.get(`${HUB_API}/blocklist`, { timeout: 2500 })
+        axios.get(`${HUB_API}/stats`, { headers: { 'x-api-key': API_KEY }, timeout: 2500 }),
+        axios.get(`${HUB_API}/blocklist`, { headers: { 'x-api-key': API_KEY }, timeout: 2500 })
       ]);
 
       if (statsRes.data) {
@@ -92,7 +95,12 @@ export default function App() {
     setIsUnbanningIp(ip);
     try {
       if (isOnline) {
-        await axios.delete(`${HUB_API}/unban/${encodeURIComponent(ip)}`);
+        await axios.delete(`${HUB_API}/unban/${encodeURIComponent(ip)}`, {
+          headers: {
+            'Authorization': `Bearer ${ADMIN_TOKEN}`,
+            'x-admin-token': ADMIN_TOKEN
+          }
+        });
       }
       
       // Optimistic UI Update without page reload

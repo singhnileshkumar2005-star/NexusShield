@@ -8,6 +8,9 @@ const HUB_URL = import.meta.env.VITE_HUB_API ||
     ? 'http://127.0.0.1:8000'
     : 'https://nexusshield.onrender.com');
 
+const API_KEY = import.meta.env.VITE_NEXUS_API_KEY || 'nexus_dev_key_2026';
+const ADMIN_TOKEN = import.meta.env.VITE_NEXUS_ADMIN_TOKEN || 'nexus_admin_secret_2026';
+
 export default function App() {
   const [currentView, setCurrentView] = useState('admin'); // 'admin' | 'client'
   const [blockedIps, setBlockedIps] = useState([]);
@@ -19,8 +22,8 @@ export default function App() {
   const fetchData = useCallback(async () => {
     try {
       const [blocklistRes, statsRes] = await Promise.all([
-        axios.get(`${HUB_URL}/blocklist`, { timeout: 2500 }),
-        axios.get(`${HUB_URL}/stats`, { timeout: 2500 })
+        axios.get(`${HUB_URL}/blocklist`, { headers: { 'x-api-key': API_KEY }, timeout: 2500 }),
+        axios.get(`${HUB_URL}/stats`, { headers: { 'x-api-key': API_KEY }, timeout: 2500 })
       ]);
 
       if (blocklistRes.data && Array.isArray(blocklistRes.data.blocked_ips)) {
@@ -64,7 +67,12 @@ export default function App() {
   const handleUnban = async (ip) => {
     setIsUnbanning(ip);
     try {
-      await axios.delete(`${HUB_URL}/unban/${encodeURIComponent(ip)}`);
+      await axios.delete(`${HUB_URL}/unban/${encodeURIComponent(ip)}`, {
+        headers: {
+          'Authorization': `Bearer ${ADMIN_TOKEN}`,
+          'x-admin-token': ADMIN_TOKEN
+        }
+      });
       
       setBlockedIps(prev => prev.filter(item => item.ip !== ip));
       setStats(prev => ({
@@ -81,7 +89,7 @@ export default function App() {
   };
 
   if (currentView === 'client') {
-    return <ClientPortal onBackToAdmin={() => setCurrentView('admin')} />;
+    return <ClientPortal onBackToAdmin={() => setCurrentView('admin')} apiKey={API_KEY} />;
   }
 
   return (
