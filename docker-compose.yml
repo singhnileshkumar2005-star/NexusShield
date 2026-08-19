@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # 1. NexusSecure Hub Coordinator Backend
+  hub:
+    build:
+      context: .
+      dockerfile: apps/hub/Dockerfile
+    container_name: nexussecure-hub
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      # Optional: Supabase cloud persistence (leave empty for zero-config local storage)
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+    volumes:
+      - hub-data:/app/apps/hub/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # 2. Mesh Central Admin Operations Dashboard (Next.js)
+  admin-dashboard:
+    build:
+      context: .
+      dockerfile: apps/admin-dashboard/Dockerfile
+    container_name: nexussecure-admin-dashboard
+    restart: unless-stopped
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=production
+      - PORT=3010
+      - NEXT_PUBLIC_HUB_URL=http://localhost:3000
+    depends_on:
+      hub:
+        condition: service_healthy
+
+  # 3. Client Site Owner Portal (Next.js)
+  site-portal:
+    build:
+      context: .
+      dockerfile: apps/site-portal/Dockerfile
+    container_name: nexussecure-site-portal
+    restart: unless-stopped
+    ports:
+      - "3020:3020"
+    environment:
+      - NODE_ENV=production
+      - PORT=3020
+      - NEXT_PUBLIC_HUB_URL=http://localhost:3000
+    depends_on:
+      hub:
+        condition: service_healthy
+
+volumes:
+  hub-data:
+    driver: local
