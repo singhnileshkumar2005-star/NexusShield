@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSite } from '@/lib/site-context';
 import { X, Globe, Shield, ArrowRight } from 'lucide-react';
 
@@ -14,8 +15,31 @@ export function NewSiteModal({ isOpen, onClose }: NewSiteModalProps) {
   const [siteName, setSiteName] = useState('');
   const [siteUrl, setSiteUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,19 +56,27 @@ export function NewSiteModal({ isOpen, onClose }: NewSiteModalProps) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#ffffff] border border-[#ebebeb] rounded-lg max-w-md w-full p-6 relative">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      {/* Dimmed backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Modal Dialog Box */}
+      <div className="relative w-full max-w-md bg-[#ffffff] border border-[#ebebeb] rounded-lg p-6 my-auto z-10 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#8f8f8f] hover:text-[#171717] transition-colors p-1"
+          className="absolute top-4 right-4 text-[#8f8f8f] hover:text-[#171717] hover:bg-[#fafafa] transition-colors p-1.5 rounded-full border border-transparent hover:border-[#ebebeb]"
           aria-label="Close modal"
         >
           <X className="w-4 h-4" />
         </button>
 
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-[#fafafa] border border-[#ebebeb] flex items-center justify-center">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 rounded-lg bg-[#fafafa] border border-[#ebebeb] flex items-center justify-center flex-shrink-0">
             <Shield className="w-4 h-4 text-[#171717]" />
           </div>
           <div>
@@ -52,7 +84,7 @@ export function NewSiteModal({ isOpen, onClose }: NewSiteModalProps) {
               Register New Website
             </h3>
             <p className="text-xs text-[#8f8f8f]">
-              Connect a new domain to the decentralized protection mesh.
+              Connect a new domain to the collaborative protection mesh.
             </p>
           </div>
         </div>
@@ -65,10 +97,11 @@ export function NewSiteModal({ isOpen, onClose }: NewSiteModalProps) {
             <input
               type="text"
               required
+              autoFocus
               placeholder="e.g. Production Storefront"
               value={siteName}
               onChange={(e) => setSiteName(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-[#ffffff] border border-[#ebebeb] rounded-lg text-[#171717] placeholder-[#8f8f8f] focus:outline-none focus:border-[#171717] transition-colors"
+              className="w-full text-xs px-3 py-2 bg-[#ffffff] border border-[#ebebeb] rounded-lg text-[#171717] placeholder-[#8f8f8f] focus:outline-none focus:border-[#171717] focus:ring-1 focus:ring-[#171717] transition-all"
             />
           </div>
 
@@ -83,12 +116,12 @@ export function NewSiteModal({ isOpen, onClose }: NewSiteModalProps) {
                 placeholder="https://store.example.com"
                 value={siteUrl}
                 onChange={(e) => setSiteUrl(e.target.value)}
-                className="w-full text-xs pl-8 pr-3 py-2 bg-[#ffffff] border border-[#ebebeb] rounded-lg text-[#171717] placeholder-[#8f8f8f] focus:outline-none focus:border-[#171717] transition-colors font-mono"
+                className="w-full text-xs pl-8 pr-3 py-2 bg-[#ffffff] border border-[#ebebeb] rounded-lg text-[#171717] placeholder-[#8f8f8f] focus:outline-none focus:border-[#171717] focus:ring-1 focus:ring-[#171717] transition-all font-mono"
               />
             </div>
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2">
+          <div className="pt-3 flex items-center justify-end gap-2 border-t border-[#ebebeb]">
             <button
               type="button"
               onClick={onClose}
@@ -99,7 +132,7 @@ export function NewSiteModal({ isOpen, onClose }: NewSiteModalProps) {
             <button
               type="submit"
               disabled={isSubmitting || !siteName.trim()}
-              className="px-4 py-2 text-xs font-medium text-[#ffffff] bg-[#000000] hover:bg-[#171717] disabled:opacity-50 rounded-full transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 text-xs font-medium text-[#ffffff] bg-[#000000] hover:bg-[#171717] disabled:opacity-50 rounded-full transition-all flex items-center gap-1.5"
             >
               <span>{isSubmitting ? 'Registering...' : 'Enlist Site'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -109,4 +142,6 @@ export function NewSiteModal({ isOpen, onClose }: NewSiteModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

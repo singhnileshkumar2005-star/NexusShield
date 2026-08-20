@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,12 @@ export function Modal({
   children,
   maxWidth = 'md',
 }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -39,7 +46,7 @@ export function Modal({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const maxWidths = {
     sm: 'max-w-sm',
@@ -48,18 +55,18 @@ export function Modal({
     xl: 'max-w-2xl',
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
       <div
         className={cn(
-          'relative w-full bg-white rounded-lg border border-[#ebebeb] p-6 z-10 max-h-[90vh] overflow-y-auto',
+          'relative w-full bg-white rounded-lg border border-[#ebebeb] p-6 z-10 max-h-[90vh] overflow-y-auto my-auto shadow-2xl animate-in fade-in zoom-in-95 duration-150',
           maxWidths[maxWidth]
         )}
       >
@@ -82,4 +89,6 @@ export function Modal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
