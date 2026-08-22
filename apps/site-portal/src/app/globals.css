@@ -1,48 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=Manrope:wght@450;500;600;700&family=Source+Code+Pro:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 9%;
-    --font-geist-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-    --font-geist-mono: 'GeistMono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --brand-green: #3ecf8e;
+    --card-surface: #1a1a1a;
   }
 
   * {
-    border-color: #ebebeb;
+    border-color: #262626;
   }
 
   body {
-    background-color: #fafafa;
-    color: #171717;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-color: #000000;
+    color: #ffffff;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'Source Code Pro', ui-monospace, Menlo, monospace;
+  }
+
   ::selection {
-    background-color: #171717;
-    color: #ffffff;
+    background-color: #3ecf8e;
+    color: #000000;
   }
 }
 
-/* Monochromatic Scrollbar */
+/* Supabase Dark Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #fafafa;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4d4d4;
-  border-radius: 9999px;
+  background: #2e2e2e;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a3a3a3;
+  background: #3ecf8e;
 }

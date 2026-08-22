@@ -9,57 +9,59 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Vercel Light Design System Tokens
-        gray: {
-          50: '#fcfcfc',
-          100: '#f7f7f7',
-          200: '#ebebeb', // Dividers & 1px border rings
-          300: '#e1e1e1',
-          400: '#cccccc',
-          500: '#b4b4b4',
-          600: '#9e9e9e',
-          700: '#8f8f8f', // Tertiary / muted
-          800: '#666666',
-          900: '#4d4d4d', // Secondary text / subheadings
-          1000: '#171717', // Primary text / headings
-        },
-        surface: {
-          DEFAULT: '#ffffff', // background-100
-          subtle: '#fafafa',  // background-200
-          muted: '#f5f5f5',
-          border: '#ebebeb',  // Hairline 1px border ring
-        },
         brand: {
+          green: '#3ecf8e',
+          'dark-green': '#006239',
+          'light-green': '#3fcf8e',
           black: '#000000',
           white: '#ffffff',
         },
+        surface: {
+          base: '#000000',
+          card: '#1a1a1a',
+          cardHover: '#222222',
+          DEFAULT: '#1a1a1a',
+          subtle: '#141414',
+          muted: '#1f1f1f',
+          border: '#2e2e2e',
+        },
+        foreground: {
+          DEFAULT: '#ffffff',
+          white: '#ffffff',
+          muted: '#a0a0a0',
+          secondary: '#525252',
+        },
+        purple: {
+          accent: '#bda4ff',
+        },
         status: {
-          success: '#10b981',
+          success: '#3ecf8e',
           warning: '#f59e0b',
           danger: '#ef4444',
           info: '#3b82f6',
         }
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'Geist', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['var(--font-geist-mono)', 'GeistMono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
-      },
-      letterSpacing: {
-        'display-2xl': '-3.84px',
-        'display-xl': '-2.4px',
-        'display-lg': '-1.5px',
-        'display-md': '-0.96px',
-        'display-sm': '-0.5px',
-        'tightest': '-0.06em',
+        display: ['Manrope', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['Source Code Pro', 'ui-monospace', 'Menlo', 'monospace'],
       },
       borderRadius: {
-        'pill': '9999px',
-        'card': '8px',
+        xs: '2px',
+        sm: '4px',
+        md: '6px',
+        base: '8px',
+        lg: '11px',
+        xl: '12px',
+        '2xl': '16px',
+        card: '12px',
+        pill: '8px',
       },
       boxShadow: {
-        'ring-border': '0 0 0 1px #ebebeb',
-        'ring-border-hover': '0 0 0 1px #cccccc',
-        'ring-focus': '0 0 0 2px #171717',
+        'ring-border': '0 0 0 1px #2e2e2e',
+        'ring-border-hover': '0 0 0 1px #3ecf8e',
+        'ring-focus': '0 0 0 2px #3ecf8e',
+        'card-subtle': '0 4px 20px rgba(0, 0, 0, 0.5)',
       },
       keyframes: {
         'pulse-subtle': {

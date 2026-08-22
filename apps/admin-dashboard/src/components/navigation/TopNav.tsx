@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, RefreshCw, Zap, ExternalLink } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
 import { HubApi } from '@/lib/api';
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
@@ -58,32 +57,32 @@ export function TopNav() {
   }, []);
 
   return (
-    <header className="h-16 border-b border-[#ebebeb] bg-white px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-16 border-b border-[#262626] bg-[#000000]/90 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-30">
       <div className="flex flex-col">
-        <h1 className="text-sm font-semibold text-[#171717] tracking-tight">
+        <h1 className="text-sm font-semibold text-[#ffffff] font-display tracking-tight">
           {currentMeta.title}
         </h1>
-        <p className="text-xs text-[#8f8f8f] hidden sm:block">
+        <p className="text-xs text-[#a0a0a0] hidden sm:block">
           {currentMeta.subtitle}
         </p>
       </div>
 
       <div className="flex items-center gap-3">
         {/* Hub Connection Badge */}
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#fafafa] border border-[#ebebeb] text-xs">
+        <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-[#141414] border border-[#2e2e2e] text-xs">
           <span className="relative flex h-2 w-2">
             <span
               className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                hubStatus === 'connected' ? 'bg-emerald-400' : 'bg-amber-400'
+                hubStatus === 'connected' ? 'bg-[#3ecf8e]' : 'bg-amber-400'
               }`}
             />
             <span
               className={`relative inline-flex rounded-full h-2 w-2 ${
-                hubStatus === 'connected' ? 'bg-emerald-500' : 'bg-amber-500'
+                hubStatus === 'connected' ? 'bg-[#3ecf8e]' : 'bg-amber-500'
               }`}
             />
           </span>
-          <span className="font-mono text-[11px] text-[#171717]">
+          <span className="font-mono text-[11px] text-[#ffffff]">
             {hubStatus === 'connected' ? 'Hub: Connected (:3000)' : 'Hub: Autonomous Mesh'}
           </span>
         </div>

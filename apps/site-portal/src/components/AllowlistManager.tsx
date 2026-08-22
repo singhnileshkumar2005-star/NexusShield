@@ -7,11 +7,7 @@ import {
   Plus,
   Trash2,
   Search,
-  CheckCircle2,
-  XCircle,
   Download,
-  AlertCircle,
-  Clock,
   Layers,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -82,19 +78,19 @@ export function AllowlistManager() {
   return (
     <div className="space-y-6">
       {/* Top Banner info */}
-      <div className="bg-[#ffffff] border border-[#ebebeb] rounded-lg p-5 sm:p-6">
+      <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-xl p-5 sm:p-6 shadow-card-subtle">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#fafafa] border border-[#ebebeb] flex items-center justify-center flex-shrink-0">
-              <ShieldCheck className="w-5 h-5 text-[#171717]" />
+            <div className="w-10 h-10 rounded-lg bg-[#006239]/40 border border-[#3ecf8e]/30 flex items-center justify-center flex-shrink-0">
+              <ShieldCheck className="w-5 h-5 text-[#3ecf8e]" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-[#171717] tracking-tight">
+              <h2 className="text-sm font-semibold text-[#ffffff] font-display tracking-tight">
                 Site-Specific IP / CIDR Allowlist
               </h2>
-              <p className="text-xs text-[#8f8f8f] mt-0.5 max-w-2xl">
+              <p className="text-xs text-[#a0a0a0] mt-0.5 max-w-2xl">
                 IP addresses and CIDR subnets listed here bypass all NexusSecure mesh blocking rules on{' '}
-                <strong className="text-[#171717] font-semibold">{selectedSite.site_name}</strong>. Ideal for office VPNs, CI/CD runners, and developer machines.
+                <strong className="text-[#3ecf8e] font-semibold">{selectedSite.site_name}</strong>. Ideal for office VPNs, CI/CD runners, and developer machines.
               </p>
             </div>
           </div>
@@ -102,15 +98,15 @@ export function AllowlistManager() {
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               onClick={handleExportJson}
-              className="px-3.5 py-1.5 bg-[#ffffff] hover:bg-[#fafafa] border border-[#ebebeb] rounded-full text-xs font-medium text-[#171717] transition-all flex items-center gap-1.5"
+              className="px-3.5 py-1.5 bg-[#141414] hover:bg-[#222222] border border-[#2e2e2e] rounded-lg text-xs font-medium text-[#ffffff] transition-all flex items-center gap-1.5"
             >
-              <Download className="w-3.5 h-3.5 text-[#171717]" />
+              <Download className="w-3.5 h-3.5 text-[#3ecf8e]" />
               <span>Export JSON</span>
             </button>
 
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="px-4 py-1.5 bg-[#000000] hover:bg-[#171717] text-[#ffffff] rounded-full text-xs font-medium transition-colors flex items-center gap-1.5"
+              className="px-4 py-1.5 bg-[#3ecf8e] hover:bg-[#3fcf8e] text-[#000000] rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{showAddForm ? 'Close Form' : 'Add IP / Subnet'}</span>
@@ -122,11 +118,11 @@ export function AllowlistManager() {
         {showAddForm && (
           <form
             onSubmit={handleAddSubmit}
-            className="mt-5 pt-5 border-t border-[#ebebeb] grid grid-cols-1 sm:grid-cols-12 gap-3 items-end animate-in fade-in"
+            className="mt-5 pt-5 border-t border-[#262626] grid grid-cols-1 sm:grid-cols-12 gap-3 items-end animate-in fade-in"
           >
             <div className="sm:col-span-4">
-              <label className="block text-[11px] font-medium text-[#4d4d4d] mb-1">
-                IP Address or CIDR Subnet <span className="text-[#171717]">*</span>
+              <label className="block text-[11px] font-medium text-[#a0a0a0] mb-1">
+                IP Address or CIDR Subnet <span className="text-[#3ecf8e]">*</span>
               </label>
               <input
                 type="text"
@@ -134,12 +130,12 @@ export function AllowlistManager() {
                 placeholder="e.g. 198.51.100.24 or 10.0.0.0/16"
                 value={ipInput}
                 onChange={(e) => setIpInput(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-[#ffffff] border border-[#ebebeb] rounded-lg text-[#171717] placeholder-[#8f8f8f] focus:outline-none focus:border-[#171717] font-mono transition-colors"
+                className="w-full text-xs px-3 py-2 bg-[#141414] border border-[#2e2e2e] rounded-lg text-[#ffffff] placeholder-[#525252] focus:outline-none focus:border-[#3ecf8e] font-mono transition-colors"
               />
             </div>
 
             <div className="sm:col-span-6">
-              <label className="block text-[11px] font-medium text-[#4d4d4d] mb-1">
+              <label className="block text-[11px] font-medium text-[#a0a0a0] mb-1">
                 Description / Memo
               </label>
               <input
@@ -147,7 +143,7 @@ export function AllowlistManager() {
                 placeholder="e.g. Corporate VPN Gateway"
                 value={descInput}
                 onChange={(e) => setDescInput(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-[#ffffff] border border-[#ebebeb] rounded-lg text-[#171717] placeholder-[#8f8f8f] focus:outline-none focus:border-[#171717] transition-colors"
+                className="w-full text-xs px-3 py-2 bg-[#141414] border border-[#2e2e2e] rounded-lg text-[#ffffff] placeholder-[#525252] focus:outline-none focus:border-[#3ecf8e] transition-colors"
               />
             </div>
 
@@ -155,7 +151,7 @@ export function AllowlistManager() {
               <button
                 type="submit"
                 disabled={isAdding || !ipInput.trim()}
-                className="w-full py-2 bg-[#000000] hover:bg-[#171717] disabled:opacity-50 text-[#ffffff] rounded-full text-xs font-medium transition-colors"
+                className="w-full py-2 bg-[#3ecf8e] hover:bg-[#3fcf8e] disabled:opacity-50 text-[#000000] rounded-lg text-xs font-semibold transition-colors"
               >
                 {isAdding ? 'Adding...' : 'Save Rule'}
               </button>
@@ -165,23 +161,23 @@ export function AllowlistManager() {
       </div>
 
       {/* Main Table Container */}
-      <div className="bg-[#ffffff] border border-[#ebebeb] rounded-lg overflow-hidden">
+      <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-xl overflow-hidden shadow-card-subtle">
         {/* Search & Stats Bar */}
-        <div className="p-4 border-b border-[#ebebeb] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="p-4 border-b border-[#262626] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="w-3.5 h-3.5 text-[#8f8f8f] absolute left-3 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-[#525252] absolute left-3 top-2.5" />
             <input
               type="text"
               placeholder="Search by IP, subnet or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs pl-8 pr-3 py-1.5 bg-[#fafafa] border border-[#ebebeb] rounded-full text-[#171717] placeholder-[#8f8f8f] focus:outline-none focus:border-[#171717] transition-colors"
+              className="w-full text-xs pl-8 pr-3 py-1.5 bg-[#141414] border border-[#2e2e2e] rounded-lg text-[#ffffff] placeholder-[#525252] focus:outline-none focus:border-[#3ecf8e] transition-colors font-mono"
             />
           </div>
 
-          <div className="text-xs font-mono text-[#8f8f8f] flex items-center gap-2">
+          <div className="text-xs font-mono text-[#a0a0a0] flex items-center gap-2">
             <span>Total Active Rules:</span>
-            <strong className="text-[#171717] font-semibold">
+            <strong className="text-[#3ecf8e] font-semibold">
               {allowlist.filter((e) => e.is_active).length}
             </strong>
           </div>
@@ -190,11 +186,11 @@ export function AllowlistManager() {
         {/* Allowlist Table */}
         {filteredAllowlist.length === 0 ? (
           <div className="p-8 text-center">
-            <Layers className="w-8 h-8 text-[#8f8f8f] mx-auto mb-2" />
-            <h4 className="text-xs font-semibold text-[#171717]">
+            <Layers className="w-8 h-8 text-[#525252] mx-auto mb-2" />
+            <h4 className="text-xs font-semibold text-[#ffffff]">
               {searchQuery ? 'No matching allowlist rules found' : 'No allowlist rules configured'}
             </h4>
-            <p className="text-xs text-[#8f8f8f] mt-1">
+            <p className="text-xs text-[#a0a0a0] mt-1">
               Add your trusted IPs or subnets to guarantee they are never blocked.
             </p>
           </div>
@@ -202,7 +198,7 @@ export function AllowlistManager() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-[#fafafa] border-b border-[#ebebeb] text-[#8f8f8f] uppercase text-[10px] font-semibold tracking-wider">
+                <tr className="bg-[#141414] border-b border-[#262626] text-[#a0a0a0] uppercase text-[10px] font-semibold tracking-wider font-mono">
                   <th className="py-2.5 px-4">IP / CIDR Range</th>
                   <th className="py-2.5 px-4">Description</th>
                   <th className="py-2.5 px-4">Status</th>
@@ -211,7 +207,7 @@ export function AllowlistManager() {
                   <th className="py-2.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#ebebeb]">
+              <tbody className="divide-y divide-[#262626]">
                 {filteredAllowlist.map((entry) => {
                   let timeAgo = '';
                   try {
@@ -225,16 +221,16 @@ export function AllowlistManager() {
                   const isCidr = entry.ip_or_cidr.includes('/');
 
                   return (
-                    <tr key={entry.id} className="hover:bg-[#fafafa] transition-colors group">
+                    <tr key={entry.id} className="hover:bg-[#222222] transition-colors group">
                       {/* IP / CIDR */}
-                      <td className="py-3 px-4 font-mono text-[#171717] font-medium">
+                      <td className="py-3 px-4 font-mono text-[#ffffff] font-medium">
                         <div className="flex items-center gap-1.5">
                           <span className="font-semibold">{entry.ip_or_cidr}</span>
                           <span
                             className={`px-1.5 py-0.2 text-[9px] uppercase font-mono rounded border ${
                               isCidr
-                                ? 'bg-[#171717] text-[#ffffff] border-[#171717]'
-                                : 'bg-[#fafafa] text-[#4d4d4d] border-[#ebebeb]'
+                                ? 'bg-[#006239]/40 text-[#3ecf8e] border-[#3ecf8e]/30'
+                                : 'bg-[#141414] text-[#a0a0a0] border-[#2e2e2e]'
                             }`}
                           >
                             {isCidr ? 'Subnet' : 'Host IP'}
@@ -243,7 +239,7 @@ export function AllowlistManager() {
                       </td>
 
                       {/* Description */}
-                      <td className="py-3 px-4 text-[#4d4d4d] max-w-[280px] truncate">
+                      <td className="py-3 px-4 text-[#a0a0a0] max-w-[280px] truncate">
                         {entry.description || '—'}
                       </td>
 
@@ -251,15 +247,15 @@ export function AllowlistManager() {
                       <td className="py-3 px-4">
                         <button
                           onClick={() => toggleAllowlistEntry(entry.id)}
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border transition-colors ${
                             entry.is_active
-                              ? 'bg-[#ffffff] text-[#171717] border-[#ebebeb] hover:bg-[#fafafa]'
-                              : 'bg-[#fafafa] text-[#8f8f8f] border-[#ebebeb]'
+                              ? 'bg-[#006239]/30 text-[#3ecf8e] border-[#3ecf8e]/40 hover:bg-[#006239]/50'
+                              : 'bg-[#141414] text-[#525252] border-[#2e2e2e]'
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              entry.is_active ? 'bg-[#171717]' : 'bg-[#8f8f8f]'
+                              entry.is_active ? 'bg-[#3ecf8e]' : 'bg-[#525252]'
                             }`}
                           />
                           <span>{entry.is_active ? 'Active' : 'Disabled'}</span>
@@ -267,13 +263,13 @@ export function AllowlistManager() {
                       </td>
 
                       {/* Bypassed Hits */}
-                      <td className="py-3 px-4 font-mono text-xs text-[#171717]">
+                      <td className="py-3 px-4 font-mono text-xs text-[#ffffff]">
                         {entry.bypassed_count.toLocaleString()}{' '}
-                        <span className="text-[10px] text-[#8f8f8f]">requests</span>
+                        <span className="text-[10px] text-[#525252]">requests</span>
                       </td>
 
                       {/* Created Date */}
-                      <td className="py-3 px-4 text-[#8f8f8f] font-mono text-[11px]">
+                      <td className="py-3 px-4 text-[#a0a0a0] font-mono text-[11px]">
                         {timeAgo}
                       </td>
 
@@ -281,7 +277,7 @@ export function AllowlistManager() {
                       <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => deleteAllowlistEntry(entry.id)}
-                          className="p-1 text-[#8f8f8f] hover:text-[#171717] hover:bg-[#fafafa] border border-transparent hover:border-[#ebebeb] rounded transition-colors"
+                          className="p-1 text-[#525252] hover:text-red-400 hover:bg-[#141414] border border-transparent hover:border-red-900/40 rounded transition-colors"
                           title="Delete allowlist rule"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
