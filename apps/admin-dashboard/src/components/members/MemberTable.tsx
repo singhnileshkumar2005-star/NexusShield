@@ -2,21 +2,14 @@
 
 import React, { useState } from 'react';
 import {
-  Users,
-  Search,
-  CheckCircle2,
-  Globe,
-  Star,
-  Activity,
   ArrowUpRight,
-  TrendingUp,
   Shield,
   Copy,
   Check,
+  Search,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { MemberSite } from '@/lib/types';
 import { formatNumber, formatRelativeTime } from '@/lib/utils';
@@ -26,7 +19,7 @@ interface MemberTableProps {
   onUpdateReputation?: (memberId: string, newScore: number) => Promise<void>;
 }
 
-export function MemberTable({ members, onUpdateReputation }: MemberTableProps) {
+export function MemberTable({ members }: MemberTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -44,7 +37,7 @@ export function MemberTable({ members, onUpdateReputation }: MemberTableProps) {
   };
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col shadow-card-subtle">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -72,7 +65,7 @@ export function MemberTable({ members, onUpdateReputation }: MemberTableProps) {
       <CardContent className="p-0 overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-[#ebebeb] bg-[#fafafa] text-[#8f8f8f] font-mono">
+            <tr className="border-b border-[#262626] bg-[#141414] text-[#a0a0a0] font-mono">
               <th className="py-3 px-4 font-medium">Site Name & Node ID</th>
               <th className="py-3 px-4 font-medium">Status</th>
               <th className="py-3 px-4 font-medium">Reputation Score</th>
@@ -81,10 +74,10 @@ export function MemberTable({ members, onUpdateReputation }: MemberTableProps) {
               <th className="py-3 px-4 font-medium text-right">Privacy Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#ebebeb]">
+          <tbody className="divide-y divide-[#262626]">
             {filteredMembers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-[#8f8f8f]">
+                <td colSpan={6} className="py-12 text-center text-[#a0a0a0]">
                   No member websites found.
                 </td>
               </tr>
@@ -95,13 +88,13 @@ export function MemberTable({ members, onUpdateReputation }: MemberTableProps) {
                 return (
                   <tr
                     key={member.id}
-                    className="hover:bg-[#fafafa] transition-colors group"
+                    className="hover:bg-[#222222] transition-colors group"
                   >
                     {/* Site Info */}
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm text-[#171717]">
+                          <span className="font-semibold text-sm text-[#ffffff]">
                             {member.siteName}
                           </span>
                           {member.siteUrl && (
@@ -109,21 +102,21 @@ export function MemberTable({ members, onUpdateReputation }: MemberTableProps) {
                               href={member.siteUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-[#8f8f8f] hover:text-[#171717] transition-colors"
+                              className="text-[#a0a0a0] hover:text-[#3ecf8e] transition-colors"
                             >
                               <ArrowUpRight className="w-3.5 h-3.5" />
                             </a>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 text-[11px] font-mono text-[#8f8f8f]">
+                        <div className="flex items-center gap-1 text-[11px] font-mono text-[#a0a0a0]">
                           <span>ID: {member.id.substring(0, 18)}...</span>
                           <button
                             onClick={() => copyId(member.id)}
-                            className="p-0.5 hover:text-[#171717] transition-colors"
+                            className="p-0.5 hover:text-[#3ecf8e] transition-colors"
                             title="Copy full member ID"
                           >
                             {copiedId === member.id ? (
-                              <Check className="w-3 h-3 text-[#166534]" />
+                              <Check className="w-3 h-3 text-[#3ecf8e]" />
                             ) : (
                               <Copy className="w-3 h-3" />
                             )}
@@ -135,13 +128,13 @@ export function MemberTable({ members, onUpdateReputation }: MemberTableProps) {
                     {/* Status */}
                     <td className="py-3.5 px-4">
                       {member.status === 'online' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono bg-[#006239]/40 text-[#3ecf8e] border border-[#3ecf8e]/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#3ecf8e] animate-pulse" />
                           Online
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-[#fafafa] text-[#8f8f8f] border border-[#ebebeb]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#8f8f8f]" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono bg-[#141414] text-[#a0a0a0] border border-[#2e2e2e]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#a0a0a0]" />
                           Idle
                         </span>
                       )}
@@ -150,33 +143,33 @@ export function MemberTable({ members, onUpdateReputation }: MemberTableProps) {
                     {/* Reputation Score */}
                     <td className="py-3.5 px-4 font-mono">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 rounded-full bg-[#ebebeb] overflow-hidden">
+                        <div className="w-16 h-1.5 rounded-full bg-[#141414] border border-[#2e2e2e] overflow-hidden">
                           <div
-                            className="h-full bg-[#171717] rounded-full"
+                            className="h-full bg-[#3ecf8e] rounded-full"
                             style={{ width: `${repPercent}%` }}
                           />
                         </div>
-                        <span className="font-semibold text-[#171717]">
+                        <span className="font-semibold text-[#ffffff]">
                           {member.reputationScore.toFixed(2)}
                         </span>
-                        <span className="text-[#8f8f8f] text-[10px]">/ 5.00</span>
+                        <span className="text-[#a0a0a0] text-[10px]">/ 5.00</span>
                       </div>
                     </td>
 
                     {/* Mitigations */}
-                    <td className="py-3.5 px-4 font-mono font-medium text-[#171717]">
+                    <td className="py-3.5 px-4 font-mono font-medium text-[#3ecf8e]">
                       {formatNumber(member.totalMitigations)}
                     </td>
 
                     {/* Heartbeat */}
-                    <td className="py-3.5 px-4 font-mono text-[#4d4d4d]">
+                    <td className="py-3.5 px-4 font-mono text-[#a0a0a0]">
                       {formatRelativeTime(member.lastHeartbeat)}
                     </td>
 
                     {/* Privacy */}
                     <td className="py-3.5 px-4 text-right">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-[#fafafa] text-[#171717] border border-[#ebebeb]">
-                        <Shield className="w-3 h-3 text-[#171717]" />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-[#141414] text-[#3ecf8e] border border-[#2e2e2e]">
+                        <Shield className="w-3 h-3 text-[#3ecf8e]" />
                         Anonymized
                       </span>
                     </td>

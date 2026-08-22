@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Shield, ShieldAlert, Users, Activity, Zap, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { Shield, ShieldAlert, Users, Activity } from 'lucide-react';
 import { StatCard } from '@/components/ui/StatCard';
 import { Badge } from '@/components/ui/Badge';
 import { ShieldStatusBanner } from '@/components/overview/ShieldStatusBanner';
@@ -35,7 +35,7 @@ export default function OverviewPage() {
 
   const handleSimulate = async () => {
     setIsTriggering(true);
-    const newEvt = triggerSimulatedAttack();
+    triggerSimulatedAttack();
     // Also update stats count
     setStats((prev) => ({
       ...prev,
@@ -60,10 +60,10 @@ export default function OverviewPage() {
           title="Total Mitigations"
           value={formatNumber(stats.totalAttacksMitigated)}
           description="Across all member websites"
-          icon={<Shield className="w-4 h-4 text-[#171717]" />}
+          icon={<Shield className="w-4 h-4 text-[#3ecf8e]" />}
           trend={{ value: '+18.4% this week', isPositive: true }}
           badge={
-            <Badge variant="outline" size="sm">
+            <Badge variant="outline" size="sm" className="border-[#2e2e2e] text-[#a0a0a0]">
               All Nodes
             </Badge>
           }
@@ -74,7 +74,7 @@ export default function OverviewPage() {
           title="Active Blocked IPs"
           value={stats.activeBlockedIps}
           description="Live distributed IoCs"
-          icon={<ShieldAlert className="w-4 h-4 text-[#171717]" />}
+          icon={<ShieldAlert className="w-4 h-4 text-[#3ecf8e]" />}
           trend={{ value: 'Auto-expiring (48h TTL)', isNeutral: true }}
           badge={
             <Badge variant="black" size="sm">
@@ -88,7 +88,7 @@ export default function OverviewPage() {
           title="Member Sites"
           value={stats.connectedMemberSites}
           description="Active telemetry agents"
-          icon={<Users className="w-4 h-4 text-[#171717]" />}
+          icon={<Users className="w-4 h-4 text-[#3ecf8e]" />}
           trend={{ value: '100% heartbeat sync', isPositive: true }}
           badge={
             <Badge variant="success" size="sm" pulse>
@@ -102,10 +102,10 @@ export default function OverviewPage() {
           title="Mesh Health"
           value={`${stats.meshHealthPercent}%`}
           description="Zero-knowledge corroboration"
-          icon={<Activity className="w-4 h-4 text-[#171717]" />}
+          icon={<Activity className="w-4 h-4 text-[#3ecf8e]" />}
           trend={{ value: 'P99 Latency: 38ms', isPositive: true }}
           badge={
-            <Badge variant="default" size="sm">
+            <Badge variant="default" size="sm" className="bg-[#141414] text-[#3ecf8e] border-[#2e2e2e]">
               Optimal
             </Badge>
           }

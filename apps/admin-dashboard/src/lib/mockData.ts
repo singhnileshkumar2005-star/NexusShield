@@ -235,10 +235,10 @@ export const INITIAL_NETWORK_STATS: NetworkStats = {
   avgCorroborationTimeMs: 38,
   lastSyncTime: new Date().toISOString(),
   categoryBreakdown: [
-    { category: 'brute_force', label: 'Brute Force / Credential Stuffing', count: 4230, percentage: 36, color: '#171717' },
-    { category: 'honeypot_probe', label: 'Honeypot & Recon Scanners', count: 3510, percentage: 30, color: '#4d4d4d' },
-    { category: 'sqli_xss', label: 'SQL Injection & XSS Payloads', count: 2450, percentage: 21, color: '#737373' },
-    { category: 'rate_abuse', label: 'L7 Rate Abuse & Burst Flood', count: 1454, percentage: 13, color: '#a3a3a3' },
+    { category: 'brute_force', label: 'Brute Force / Credential Stuffing', count: 4230, percentage: 36, color: '#3ecf8e' },
+    { category: 'honeypot_probe', label: 'Honeypot & Recon Scanners', count: 3510, percentage: 30, color: '#bda4ff' },
+    { category: 'sqli_xss', label: 'SQL Injection & XSS Payloads', count: 2450, percentage: 21, color: '#006239' },
+    { category: 'rate_abuse', label: 'L7 Rate Abuse & Burst Flood', count: 1454, percentage: 13, color: '#525252' },
   ],
   timelineData: [
     { time: '00:00', brute_force: 38, honeypot_probe: 24, sqli_xss: 18, rate_abuse: 8, scanner: 12, total: 100 },

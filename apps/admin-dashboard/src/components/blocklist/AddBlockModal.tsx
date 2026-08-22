@@ -6,7 +6,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { ThreatCategory } from '@/lib/types';
-import { ShieldAlert, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface AddBlockModalProps {
   isOpen: boolean;
@@ -67,13 +67,13 @@ export function AddBlockModal({ isOpen, onClose, onAddBlock }: AddBlockModalProp
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] text-xs rounded-md">
+          <div className="p-3 bg-red-950/40 border border-red-800/40 text-red-400 text-xs rounded-lg">
             {error}
           </div>
         )}
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-[#171717]">
+          <label className="text-xs font-medium text-[#ffffff]">
             Attacker IP Address
           </label>
           <Input
@@ -87,7 +87,7 @@ export function AddBlockModal({ isOpen, onClose, onAddBlock }: AddBlockModalProp
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#171717]">
+            <label className="text-xs font-medium text-[#ffffff]">
               Threat Category
             </label>
             <Select
@@ -103,7 +103,7 @@ export function AddBlockModal({ isOpen, onClose, onAddBlock }: AddBlockModalProp
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#171717]">
+            <label className="text-xs font-medium text-[#ffffff]">
               Confidence Score
             </label>
             <Select
@@ -120,7 +120,7 @@ export function AddBlockModal({ isOpen, onClose, onAddBlock }: AddBlockModalProp
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-[#171717]">
+          <label className="text-xs font-medium text-[#ffffff]">
             Block TTL Duration (Self-Healing Expiry)
           </label>
           <Select
@@ -136,7 +136,7 @@ export function AddBlockModal({ isOpen, onClose, onAddBlock }: AddBlockModalProp
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-[#171717]">
+          <label className="text-xs font-medium text-[#ffffff]">
             Internal Justification / Notes (Optional)
           </label>
           <Input
@@ -146,7 +146,7 @@ export function AddBlockModal({ isOpen, onClose, onAddBlock }: AddBlockModalProp
           />
         </div>
 
-        <div className="pt-3 border-t border-[#ebebeb] flex items-center justify-end gap-2">
+        <div className="pt-3 border-t border-[#262626] flex items-center justify-end gap-2">
           <Button variant="secondary" size="md" type="button" onClick={onClose}>
             Cancel
           </Button>
@@ -155,7 +155,7 @@ export function AddBlockModal({ isOpen, onClose, onAddBlock }: AddBlockModalProp
             size="md"
             type="submit"
             loading={loading}
-            icon={<Plus className="w-4 h-4" />}
+            icon={<Plus className="w-4 h-4 text-[#000000]" />}
           >
             Deploy Network Block
           </Button>
