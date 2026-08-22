@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Radio, Shield, Activity, Zap, Play, Pause } from 'lucide-react';
 import { ThreatRadar } from '@/components/live-feed/ThreatRadar';
 import { LiveEventFeed } from '@/components/live-feed/LiveEventFeed';
 import { Badge } from '@/components/ui/Badge';
@@ -24,26 +23,26 @@ export default function LiveFeedPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#171717]">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#ffffff] font-display">
               Dedicated Live Threat Stream & Radar
             </h2>
             <Badge variant="black" size="sm" pulse={!isPaused}>
               {isPaused ? 'PAUSED' : 'LIVE STREAM'}
             </Badge>
           </div>
-          <p className="text-xs sm:text-sm text-[#4d4d4d] mt-1">
+          <p className="text-xs sm:text-sm text-[#a0a0a0] mt-1">
             Zero-knowledge Server-Sent Events (SSE) telemetry pipeline ingesting live malicious probes across the mesh.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#ebebeb] text-xs font-mono">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1a1a1a] border border-[#2e2e2e] text-xs font-mono">
             <span
               className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-emerald-500 animate-ping' : 'bg-emerald-500'
+                isConnected ? 'bg-[#3ecf8e] animate-ping' : 'bg-[#3ecf8e]'
               }`}
             />
-            <span className="text-[#171717]">
+            <span className="text-[#ffffff]">
               {connectionMode === 'sse_live' ? 'Hub Live Socket' : 'Autonomous Mesh Simulation'}
             </span>
           </div>

@@ -4,8 +4,7 @@ import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
-import { Copy, Check, Key, Shield, Terminal } from 'lucide-react';
+import { Copy, Check, Shield, Terminal } from 'lucide-react';
 import { MemberSite } from '@/lib/types';
 
 interface RegisterMemberModalProps {
@@ -104,13 +103,13 @@ app.use(
       {!registeredResult ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="p-3 bg-[#fef2f2] border border-[#fecaca] text-[#991b1b] text-xs rounded-md">
+            <div className="p-3 bg-red-950/40 border border-red-800/40 text-red-400 text-xs rounded-lg">
               {error}
             </div>
           )}
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#171717]">
+            <label className="text-xs font-medium text-[#ffffff]">
               Site / Application Name
             </label>
             <Input
@@ -122,7 +121,7 @@ app.use(
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#171717]">
+            <label className="text-xs font-medium text-[#ffffff]">
               Target Hostname / URL (Optional)
             </label>
             <Input
@@ -130,22 +129,22 @@ app.use(
               value={siteUrl}
               onChange={(e) => setSiteUrl(e.target.value)}
             />
-            <p className="text-[11px] text-[#8f8f8f]">
+            <p className="text-[11px] text-[#a0a0a0]">
               Note: This URL is used purely for owner identification and is never shared in IoC broadcasts.
             </p>
           </div>
 
-          <div className="p-3 bg-[#fafafa] border border-[#ebebeb] rounded-lg text-xs space-y-1">
-            <div className="font-semibold text-[#171717] flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5" />
+          <div className="p-3 bg-[#141414] border border-[#2e2e2e] rounded-xl text-xs space-y-1">
+            <div className="font-semibold text-[#3ecf8e] flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-[#3ecf8e]" />
               Privacy-by-Design Promise
             </div>
-            <p className="text-[#8f8f8f] leading-snug">
+            <p className="text-[#a0a0a0] leading-snug">
               Every member receives an anonymous Member ID. Attack reports only convey attacker IPs and threat signatures.
             </p>
           </div>
 
-          <div className="pt-3 border-t border-[#ebebeb] flex items-center justify-end gap-2">
+          <div className="pt-3 border-t border-[#262626] flex items-center justify-end gap-2">
             <Button variant="secondary" size="md" type="button" onClick={handleClose}>
               Cancel
             </Button>
@@ -158,19 +157,19 @@ app.use(
         <div className="space-y-5">
           {/* API Key Box */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#171717] flex items-center justify-between">
+            <label className="text-xs font-medium text-[#ffffff] flex items-center justify-between">
               <span>Secret Mesh API Key</span>
-              <span className="text-[11px] text-[#8f8f8f]">Copy and keep safe</span>
+              <span className="text-[11px] text-[#3ecf8e]">Copy and keep safe</span>
             </label>
             <div className="flex items-center gap-2">
-              <div className="flex-1 bg-[#fafafa] border border-[#ebebeb] px-3 py-2 rounded-md font-mono text-xs text-[#171717] select-all truncate">
+              <div className="flex-1 bg-[#141414] border border-[#2e2e2e] px-3 py-2 rounded-lg font-mono text-xs text-[#3ecf8e] select-all truncate">
                 {registeredResult.apiKey}
               </div>
               <Button
-                variant="secondary"
+                variant="primary"
                 size="sm"
                 onClick={copyApiKey}
-                icon={copiedKey ? <Check className="w-3.5 h-3.5 text-[#166534]" /> : <Copy className="w-3.5 h-3.5" />}
+                icon={copiedKey ? <Check className="w-3.5 h-3.5 text-[#000000]" /> : <Copy className="w-3.5 h-3.5 text-[#000000]" />}
               >
                 {copiedKey ? 'Copied' : 'Copy'}
               </Button>
@@ -178,39 +177,39 @@ app.use(
           </div>
 
           {/* Member Details */}
-          <div className="grid grid-cols-2 gap-3 p-3 bg-[#fafafa] border border-[#ebebeb] rounded-lg text-xs font-mono">
+          <div className="grid grid-cols-2 gap-3 p-3 bg-[#141414] border border-[#2e2e2e] rounded-xl text-xs font-mono">
             <div>
-              <span className="text-[#8f8f8f] block">Anonymous Node ID:</span>
-              <span className="text-[#171717] font-semibold truncate block">{registeredResult.id}</span>
+              <span className="text-[#a0a0a0] block">Anonymous Node ID:</span>
+              <span className="text-[#ffffff] font-semibold truncate block">{registeredResult.id}</span>
             </div>
             <div>
-              <span className="text-[#8f8f8f] block">Initial Reputation:</span>
-              <span className="text-[#171717] font-semibold">1.00 (Neutral)</span>
+              <span className="text-[#a0a0a0] block">Initial Reputation:</span>
+              <span className="text-[#3ecf8e] font-semibold">1.00 (Neutral)</span>
             </div>
           </div>
 
           {/* Integration Snippet */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-[#171717] flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5" />
+              <label className="text-xs font-medium text-[#ffffff] flex items-center gap-1.5">
+                <Terminal className="w-3.5 h-3.5 text-[#3ecf8e]" />
                 Quick Integration (Node.js / Express Middleware)
               </label>
               <button
                 type="button"
                 onClick={copySnippet}
-                className="text-[11px] text-[#4d4d4d] hover:text-[#171717] font-medium flex items-center gap-1"
+                className="text-[11px] text-[#3ecf8e] hover:text-[#3fcf8e] font-medium flex items-center gap-1"
               >
-                {copiedSnippet ? <Check className="w-3 h-3 text-[#166534]" /> : <Copy className="w-3 h-3" />}
+                {copiedSnippet ? <Check className="w-3 h-3 text-[#3ecf8e]" /> : <Copy className="w-3 h-3" />}
                 {copiedSnippet ? 'Copied Snippet' : 'Copy Code'}
               </button>
             </div>
-            <pre className="p-3 bg-[#171717] text-[#e5e5e5] rounded-lg text-xs font-mono overflow-x-auto leading-relaxed border border-[#333333]">
+            <pre className="p-3 bg-[#121212] text-[#e0e0e0] rounded-xl text-xs font-mono overflow-x-auto leading-relaxed border border-[#2e2e2e]">
               {codeSnippet}
             </pre>
           </div>
 
-          <div className="pt-3 border-t border-[#ebebeb] flex items-center justify-end">
+          <div className="pt-3 border-t border-[#262626] flex items-center justify-end">
             <Button variant="primary" size="md" onClick={handleClose}>
               Done & Close
             </Button>

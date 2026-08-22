@@ -16,9 +16,9 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           className={cn(
-            'w-full h-9 appearance-none rounded-md border border-[#ebebeb] bg-white px-3 py-1.5 pr-8 text-sm text-[#171717]',
+            'w-full h-9 appearance-none rounded-lg border border-[#2e2e2e] bg-[#141414] px-3 py-1.5 pr-8 text-sm text-[#ffffff]',
             'transition-colors duration-150 cursor-pointer',
-            'focus:outline-none focus:border-[#171717] focus:ring-1 focus:ring-[#171717]',
+            'focus:outline-none focus:border-[#3ecf8e] focus:ring-1 focus:ring-[#3ecf8e]',
             'disabled:cursor-not-allowed disabled:opacity-50',
             className
           )}
@@ -26,7 +26,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         >
           {children}
         </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-[#8f8f8f]">
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-[#a0a0a0]">
           <ChevronDown className="h-4 w-4" />
         </div>
       </div>

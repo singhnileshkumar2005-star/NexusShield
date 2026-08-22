@@ -64,38 +64,38 @@ export function getCategoryBadge(category: ThreatCategory | string): {
     case 'brute_force':
       return {
         label: 'Brute Force',
-        shortLabel: 'BruteForce',
-        badgeClass: 'bg-[#171717] text-white border-transparent',
-        dotColor: 'bg-white',
+        shortLabel: 'Brute Force',
+        badgeClass: 'bg-[#006239]/40 text-[#3ecf8e] border-[#3ecf8e]/30',
+        dotColor: 'bg-[#3ecf8e]',
       };
     case 'honeypot_probe':
       return {
         label: 'Honeypot Scanner',
         shortLabel: 'Honeypot',
-        badgeClass: 'bg-[#fafafa] text-[#171717] border-[#ebebeb]',
-        dotColor: 'bg-[#171717]',
+        badgeClass: 'bg-[#006239]/40 text-[#3ecf8e] border-[#3ecf8e]/30',
+        dotColor: 'bg-[#3ecf8e]',
       };
     case 'sqli_xss':
       return {
         label: 'SQLi / XSS Payload',
         shortLabel: 'SQLi/XSS',
-        badgeClass: 'bg-[#f5f5f5] text-[#171717] border-[#d4d4d4]',
-        dotColor: 'bg-[#4d4d4d]',
+        badgeClass: 'bg-[#bda4ff]/20 text-[#bda4ff] border-[#bda4ff]/30',
+        dotColor: 'bg-[#bda4ff]',
       };
     case 'rate_abuse':
       return {
         label: 'L7 Rate Abuse',
         shortLabel: 'Rate Limit',
-        badgeClass: 'bg-white text-[#4d4d4d] border-[#ebebeb]',
-        dotColor: 'bg-[#8f8f8f]',
+        badgeClass: 'bg-[#141414] text-[#a0a0a0] border-[#2e2e2e]',
+        dotColor: 'bg-[#a0a0a0]',
       };
     case 'scanner':
     default:
       return {
         label: 'Recon Scanner',
         shortLabel: 'Scanner',
-        badgeClass: 'bg-[#fafafa] text-[#666666] border-[#ebebeb]',
-        dotColor: 'bg-[#8f8f8f]',
+        badgeClass: 'bg-[#006239]/40 text-[#3ecf8e] border-[#3ecf8e]/30',
+        dotColor: 'bg-[#3ecf8e]',
       };
   }
 }

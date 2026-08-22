@@ -1,20 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=Manrope:wght@450;500;600;700&family=Source+Code+Pro:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-geist-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --background: #000000;
+  --foreground: #ffffff;
+  --brand-green: #3ecf8e;
+  --card-surface: #1a1a1a;
 }
 
 body {
   color: var(--foreground);
-  background: #fafafa;
-  font-family: var(--font-geist-sans);
+  background: #000000;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+}
+
+code, pre, .font-mono {
+  font-family: 'Source Code Pro', ui-monospace, Menlo, monospace;
 }
 
 /* Custom hairline scrollbar */
@@ -24,20 +34,25 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #fafafa;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4d4d4;
-  border-radius: 9999px;
+  background: #2e2e2e;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a3a3a3;
+  background: #3ecf8e;
 }
 
 /* Focus outline overrides */
 *:focus-visible {
-  outline: 2px solid #171717;
+  outline: 2px solid #3ecf8e;
   outline-offset: 1px;
+}
+
+::selection {
+  background-color: #3ecf8e;
+  color: #000000;
 }

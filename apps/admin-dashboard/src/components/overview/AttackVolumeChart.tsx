@@ -30,7 +30,7 @@ export function AttackVolumeChart({ data }: AttackVolumeChartProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Network Attack Velocity (24h)</CardTitle>
-          <span className="text-xs font-mono text-[#166534] bg-[#f0fdf4] px-2 py-0.5 rounded-full border border-[#bbf7d0]">
+          <span className="text-xs font-mono text-[#3ecf8e] bg-[#006239]/40 px-2 py-0.5 rounded-md border border-[#3ecf8e]/30">
             Live Ingestion
           </span>
         </div>
@@ -48,21 +48,21 @@ export function AttackVolumeChart({ data }: AttackVolumeChartProps) {
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
                 <defs>
-                  <linearGradient id="monoGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#171717" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#171717" stopOpacity={0.0} />
+                  <linearGradient id="supabaseGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3ecf8e" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#3ecf8e" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ebebeb" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
                 <XAxis
                   dataKey="time"
-                  stroke="#8f8f8f"
+                  stroke="#525252"
                   fontSize={11}
                   tickLine={false}
-                  axisLine={{ stroke: '#ebebeb' }}
+                  axisLine={{ stroke: '#262626' }}
                 />
                 <YAxis
-                  stroke="#8f8f8f"
+                  stroke="#525252"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -73,16 +73,16 @@ export function AttackVolumeChart({ data }: AttackVolumeChartProps) {
                     if (active && payload && payload.length) {
                       const item = payload[0].payload as TimelineDataPoint;
                       return (
-                        <div className="bg-[#171717] text-white p-3 rounded-md text-xs font-mono border border-[#404040] space-y-1">
+                        <div className="bg-[#141414] text-white p-3 rounded-lg text-xs font-mono border border-[#2e2e2e] shadow-xl space-y-1">
                           <p className="font-semibold text-white">Time: {label}</p>
-                          <div className="border-t border-[#333333] pt-1 space-y-0.5">
-                            <p className="text-white font-bold">
+                          <div className="border-t border-[#262626] pt-1 space-y-0.5">
+                            <p className="text-[#3ecf8e] font-bold">
                               Total Neutralized: {formatNumber(item.total)}
                             </p>
-                            <p className="text-[#a3a3a3]">Brute Force: {item.brute_force}</p>
-                            <p className="text-[#a3a3a3]">Honeypot: {item.honeypot_probe}</p>
-                            <p className="text-[#a3a3a3]">SQLi/XSS: {item.sqli_xss}</p>
-                            <p className="text-[#a3a3a3]">Rate Abuse: {item.rate_abuse}</p>
+                            <p className="text-[#a0a0a0]">Brute Force: {item.brute_force}</p>
+                            <p className="text-[#a0a0a0]">Honeypot: {item.honeypot_probe}</p>
+                            <p className="text-[#a0a0a0]">SQLi/XSS: {item.sqli_xss}</p>
+                            <p className="text-[#a0a0a0]">Rate Abuse: {item.rate_abuse}</p>
                           </div>
                         </div>
                       );
@@ -93,15 +93,15 @@ export function AttackVolumeChart({ data }: AttackVolumeChartProps) {
                 <Area
                   type="monotone"
                   dataKey="total"
-                  stroke="#171717"
+                  stroke="#3ecf8e"
                   strokeWidth={2}
                   fillOpacity={1}
-                  fill="url(#monoGradient)"
+                  fill="url(#supabaseGradient)"
                 />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-xs text-[#8f8f8f]">
+            <div className="w-full h-full flex items-center justify-center text-xs text-[#a0a0a0]">
               Loading velocity timeline...
             </div>
           )}

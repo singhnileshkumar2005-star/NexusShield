@@ -6,16 +6,11 @@ import {
   Pause,
   Trash2,
   Zap,
-  Filter,
   CheckCircle2,
-  ShieldAlert,
-  Activity,
-  Terminal,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
-import { ThreatEvent, ThreatCategory } from '@/lib/types';
+import { ThreatEvent } from '@/lib/types';
 import { getCategoryBadge, formatRelativeTime } from '@/lib/utils';
 
 interface LiveEventFeedProps {
@@ -49,19 +44,19 @@ export function LiveEventFeed({
   ];
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col shadow-card-subtle">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-2.5 w-2.5">
               <span
                 className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                  isPaused ? 'bg-amber-400' : 'bg-emerald-400'
+                  isPaused ? 'bg-amber-400' : 'bg-[#3ecf8e]'
                 }`}
               />
               <span
                 className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                  isPaused ? 'bg-amber-500' : 'bg-emerald-500'
+                  isPaused ? 'bg-amber-500' : 'bg-[#3ecf8e]'
                 }`}
               />
             </span>
@@ -75,10 +70,10 @@ export function LiveEventFeed({
 
           <div className="flex items-center gap-2 flex-wrap">
             <Button
-              variant="secondary"
+              variant="primary"
               size="sm"
               onClick={onTriggerAttack}
-              icon={<Zap className="w-3.5 h-3.5" />}
+              icon={<Zap className="w-3.5 h-3.5 text-[#000000]" />}
             >
               Trigger Test Attack
             </Button>
@@ -102,17 +97,17 @@ export function LiveEventFeed({
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-3 pb-1 border-t border-[#ebebeb]">
+        <div className="flex items-center gap-1.5 overflow-x-auto pt-3 pb-1 border-t border-[#262626]">
           {categories.map((c) => {
             const isSelected = filterCategory === c.key;
             return (
               <button
                 key={c.key}
                 onClick={() => setFilterCategory(c.key)}
-                className={`text-xs px-3 py-1 rounded-full font-mono transition-all shrink-0 ${
+                className={`text-xs px-3 py-1 rounded-lg font-mono transition-all shrink-0 ${
                   isSelected
-                    ? 'bg-[#171717] text-white'
-                    : 'bg-[#fafafa] text-[#4d4d4d] hover:bg-[#ebebeb] border border-[#ebebeb]'
+                    ? 'bg-[#3ecf8e] text-[#000000] font-semibold'
+                    : 'bg-[#141414] text-[#a0a0a0] hover:text-[#ffffff] hover:bg-[#222222] border border-[#2e2e2e]'
                 }`}
               >
                 {c.label}
@@ -125,7 +120,7 @@ export function LiveEventFeed({
       <CardContent className="p-0 flex-1 overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse font-mono">
           <thead>
-            <tr className="border-b border-[#ebebeb] bg-[#fafafa] text-[#8f8f8f]">
+            <tr className="border-b border-[#262626] bg-[#141414] text-[#a0a0a0]">
               <th className="py-2.5 px-4 font-medium">Attacker IP</th>
               <th className="py-2.5 px-4 font-medium">Threat Signature</th>
               <th className="py-2.5 px-4 font-medium">Confidence</th>
@@ -134,10 +129,10 @@ export function LiveEventFeed({
               <th className="py-2.5 px-4 font-medium text-right">Time</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#ebebeb]">
+          <tbody className="divide-y divide-[#262626]">
             {filteredEvents.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-[#8f8f8f]">
+                <td colSpan={6} className="py-12 text-center text-[#a0a0a0]">
                   No threat events matching filter. Waiting for events...
                 </td>
               </tr>
@@ -149,12 +144,12 @@ export function LiveEventFeed({
                 return (
                   <tr
                     key={evt.id}
-                    className="hover:bg-[#fafafa] transition-colors group animate-fade-in"
+                    className="hover:bg-[#222222] transition-colors group animate-fade-in"
                   >
                     {/* Attacker IP */}
-                    <td className="py-3 px-4 font-semibold text-[#171717]">
+                    <td className="py-3 px-4 font-semibold text-[#ffffff]">
                       <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#171717]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#3ecf8e]" />
                         <span>{evt.attackerIp}</span>
                       </div>
                     </td>
@@ -168,7 +163,7 @@ export function LiveEventFeed({
                           {categoryMeta.label}
                         </span>
                         {evt.payloadSignature && (
-                          <span className="text-[10px] text-[#8f8f8f] mt-0.5 truncate max-w-xs">
+                          <span className="text-[10px] text-[#a0a0a0] mt-0.5 truncate max-w-xs">
                             {evt.payloadSignature}
                           </span>
                         )}
@@ -178,33 +173,33 @@ export function LiveEventFeed({
                     {/* Confidence */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
-                        <div className="w-12 h-1.5 rounded-full bg-[#ebebeb] overflow-hidden">
+                        <div className="w-12 h-1.5 rounded-full bg-[#141414] border border-[#2e2e2e] overflow-hidden">
                           <div
-                            className="h-full bg-[#171717] rounded-full"
+                            className="h-full bg-[#3ecf8e] rounded-full"
                             style={{ width: `${confidencePct}%` }}
                           />
                         </div>
-                        <span className="text-[#171717] text-[11px]">{confidencePct}%</span>
+                        <span className="text-[#3ecf8e] text-[11px]">{confidencePct}%</span>
                       </div>
                     </td>
 
                     {/* Reporter Mesh Node (Anonymized) */}
-                    <td className="py-3 px-4 text-[#4d4d4d]">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#fafafa] border border-[#ebebeb] text-[10px]">
+                    <td className="py-3 px-4 text-[#a0a0a0]">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#141414] border border-[#2e2e2e] text-[10px]">
                         {evt.reporterMeshId || 'node-anon-mesh'}
                       </span>
                     </td>
 
                     {/* Action */}
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#166534] bg-[#f0fdf4] px-2 py-0.5 rounded border border-[#bbf7d0]">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#3ecf8e] bg-[#006239]/40 px-2 py-0.5 rounded border border-[#3ecf8e]/30">
                         <CheckCircle2 className="w-2.5 h-2.5" />
                         PREEMPTIVE_DROP
                       </span>
                     </td>
 
                     {/* Timestamp */}
-                    <td className="py-3 px-4 text-right text-[#8f8f8f] text-[11px]">
+                    <td className="py-3 px-4 text-right text-[#a0a0a0] text-[11px]">
                       {formatRelativeTime(evt.timestamp)}
                     </td>
                   </tr>

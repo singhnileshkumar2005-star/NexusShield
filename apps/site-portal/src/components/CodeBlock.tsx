@@ -38,14 +38,14 @@ export function CodeBlock({
   const lines = code.trim().split('\n');
 
   return (
-    <div className="bg-[#171717] rounded-lg border border-[#2e2e2e] overflow-hidden text-xs">
+    <div className="bg-[#141414] rounded-xl border border-[#2e2e2e] overflow-hidden text-xs shadow-card-subtle">
       {/* Header bar */}
-      <div className="bg-[#0f0f0f] px-4 py-2.5 flex items-center justify-between border-b border-[#2e2e2e]">
-        <div className="flex items-center gap-2 text-[#8f8f8f]">
-          <Terminal className="w-3.5 h-3.5 text-[#8f8f8f]" />
+      <div className="bg-[#0f0f0f] px-4 py-2.5 flex items-center justify-between border-b border-[#262626]">
+        <div className="flex items-center gap-2 text-[#a0a0a0]">
+          <Terminal className="w-3.5 h-3.5 text-[#3ecf8e]" />
           <span className="font-mono text-[11px] text-[#ffffff]">{filename || 'Integration Snippet'}</span>
           {language && (
-            <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 bg-[#1f1f1f] text-[#8f8f8f] rounded">
+            <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 bg-[#006239]/40 text-[#3ecf8e] border border-[#3ecf8e]/30 rounded-md">
               {language}
             </span>
           )}
@@ -53,17 +53,17 @@ export function CodeBlock({
 
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#262626] hover:bg-[#333333] text-[#ffffff] transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#1a1a1a] hover:bg-[#222222] text-[#3ecf8e] border border-[#2e2e2e] transition-colors"
           title="Copy code"
         >
           {copied ? (
             <>
-              <Check className="w-3 h-3 text-[#ffffff]" />
+              <Check className="w-3 h-3 text-[#3ecf8e]" />
               <span>Copied</span>
             </>
           ) : (
             <>
-              <Copy className="w-3 h-3 text-[#8f8f8f]" />
+              <Copy className="w-3 h-3 text-[#a0a0a0]" />
               <span>Copy</span>
             </>
           )}
@@ -75,9 +75,9 @@ export function CodeBlock({
         <table className="w-full border-collapse">
           <tbody>
             {lines.map((line, idx) => (
-              <tr key={idx} className="hover:bg-[#212121]/50">
+              <tr key={idx} className="hover:bg-[#1a1a1a]/50">
                 {showLineNumbers && (
-                  <td className="pr-4 text-right select-none text-[#555555] font-mono text-[10px] w-8 align-top pt-0.5">
+                  <td className="pr-4 text-right select-none text-[#525252] font-mono text-[10px] w-8 align-top pt-0.5">
                     {idx + 1}
                   </td>
                 )}

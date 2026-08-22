@@ -59,27 +59,27 @@ export function Modal({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
       <div
         className={cn(
-          'relative w-full bg-white rounded-lg border border-[#ebebeb] p-6 z-10 max-h-[90vh] overflow-y-auto my-auto shadow-2xl animate-in fade-in zoom-in-95 duration-150',
+          'relative w-full bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 z-10 max-h-[90vh] overflow-y-auto my-auto shadow-2xl animate-in fade-in zoom-in-95 duration-150',
           maxWidths[maxWidth]
         )}
       >
-        <div className="flex items-start justify-between pb-4 border-b border-[#ebebeb]">
+        <div className="flex items-start justify-between pb-4 border-b border-[#262626]">
           <div className="space-y-1">
-            <h3 className="text-base font-semibold text-[#171717] tracking-tight">{title}</h3>
+            <h3 className="text-base font-semibold text-[#ffffff] font-display tracking-tight">{title}</h3>
             {description && (
-              <p className="text-xs text-[#8f8f8f] leading-relaxed">{description}</p>
+              <p className="text-xs text-[#a0a0a0] leading-relaxed">{description}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-[#8f8f8f] hover:text-[#171717] hover:bg-[#f5f5f5] transition-colors"
+            className="p-1 rounded-lg text-[#a0a0a0] hover:text-[#ffffff] hover:bg-[#222222] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

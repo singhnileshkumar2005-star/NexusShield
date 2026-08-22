@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Ban, Plus, ShieldCheck, Clock, ShieldAlert, Sparkles } from 'lucide-react';
+import { Ban, Plus, Clock, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/StatCard';
@@ -14,15 +14,13 @@ import { INITIAL_BLOCKLIST } from '@/lib/mockData';
 export default function BlocklistPage() {
   const [entries, setEntries] = useState<BlocklistEntry[]>(INITIAL_BLOCKLIST);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const loadBlocklist = async () => {
-    setLoading(true);
     try {
       const data = await HubApi.getBlocklist();
       setEntries(data);
-    } finally {
-      setLoading(false);
+    } catch {
+      // fallback to mock
     }
   };
 
@@ -54,10 +52,10 @@ export default function BlocklistPage() {
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#171717]">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#ffffff] font-display">
             Global Blocklist Inspector
           </h2>
-          <p className="text-xs sm:text-sm text-[#4d4d4d] mt-1">
+          <p className="text-xs sm:text-sm text-[#a0a0a0] mt-1">
             Network-wide distributed Indicators of Compromise (IoCs) enforced by member web application agents.
           </p>
         </div>
@@ -67,7 +65,7 @@ export default function BlocklistPage() {
             variant="primary"
             size="md"
             onClick={() => setIsAddModalOpen(true)}
-            icon={<Plus className="w-4 h-4" />}
+            icon={<Plus className="w-4 h-4 text-[#000000]" />}
           >
             Add Manual Block
           </Button>
@@ -80,7 +78,7 @@ export default function BlocklistPage() {
           title="Active Blocked IPs"
           value={activeCount}
           description="Distributed across member nodes"
-          icon={<Ban className="w-4 h-4 text-[#171717]" />}
+          icon={<Ban className="w-4 h-4 text-[#3ecf8e]" />}
           badge={
             <Badge variant="black" size="sm">
               Enforcing
@@ -91,14 +89,14 @@ export default function BlocklistPage() {
           title="High Certainty IoCs"
           value={highConfidenceCount}
           description="≥ 95% confidence score"
-          icon={<ShieldAlert className="w-4 h-4 text-[#171717]" />}
+          icon={<ShieldAlert className="w-4 h-4 text-[#3ecf8e]" />}
           trend={{ value: 'Multi-node corroborated', isPositive: true }}
         />
         <StatCard
           title="Auto-Healing Policy"
           value="48h TTL"
           description="Stale blocks auto-evicted"
-          icon={<Clock className="w-4 h-4 text-[#171717]" />}
+          icon={<Clock className="w-4 h-4 text-[#3ecf8e]" />}
           trend={{ value: 'Self-clearing', isNeutral: true }}
         />
       </div>

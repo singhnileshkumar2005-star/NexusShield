@@ -16,7 +16,7 @@ interface ThreatBreakdownChartProps {
   data: CategoryStat[];
 }
 
-const MONO_COLORS = ['#171717', '#404040', '#737373', '#a3a3a3'];
+const SUPABASE_COLORS = ['#3ecf8e', '#bda4ff', '#3fcf8e', '#006239', '#525252'];
 
 export function ThreatBreakdownChart({ data }: ThreatBreakdownChartProps) {
   const [isMounted, setIsMounted] = useState(false);
@@ -32,7 +32,7 @@ export function ThreatBreakdownChart({ data }: ThreatBreakdownChartProps) {
     category: item.category,
     value: item.count,
     percentage: item.percentage,
-    color: MONO_COLORS[index % MONO_COLORS.length],
+    color: SUPABASE_COLORS[index % SUPABASE_COLORS.length],
   }));
 
   return (
@@ -40,7 +40,7 @@ export function ThreatBreakdownChart({ data }: ThreatBreakdownChartProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Threat Category Breakdown</CardTitle>
-          <span className="text-xs font-mono text-[#8f8f8f]">
+          <span className="text-xs font-mono text-[#3ecf8e]">
             {formatNumber(total)} total IoCs
           </span>
         </div>
@@ -59,9 +59,9 @@ export function ThreatBreakdownChart({ data }: ThreatBreakdownChartProps) {
                     if (active && payload && payload.length) {
                       const item = payload[0].payload;
                       return (
-                        <div className="bg-[#171717] text-white px-3 py-2 rounded-md text-xs font-mono border border-[#404040]">
-                          <p className="font-semibold">{item.name}</p>
-                          <p className="text-[#a3a3a3]">
+                        <div className="bg-[#141414] text-white px-3 py-2 rounded-lg text-xs font-mono border border-[#2e2e2e] shadow-xl">
+                          <p className="font-semibold text-[#ffffff]">{item.name}</p>
+                          <p className="text-[#3ecf8e]">
                             {formatNumber(item.value)} attacks ({item.percentage}%)
                           </p>
                         </div>
@@ -78,7 +78,7 @@ export function ThreatBreakdownChart({ data }: ThreatBreakdownChartProps) {
                   outerRadius={75}
                   paddingAngle={2}
                   dataKey="value"
-                  stroke="#ffffff"
+                  stroke="#1a1a1a"
                   strokeWidth={2}
                 >
                   {chartData.map((entry, index) => (
@@ -88,24 +88,24 @@ export function ThreatBreakdownChart({ data }: ThreatBreakdownChartProps) {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-xs text-[#8f8f8f]">
+            <div className="w-full h-full flex items-center justify-center text-xs text-[#a0a0a0]">
               Loading threat distribution...
             </div>
           )}
 
           {/* Center Summary Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-xl font-bold font-mono text-[#171717]">
+            <span className="text-xl font-bold font-mono text-[#ffffff]">
               {formatNumber(total)}
             </span>
-            <span className="text-[10px] text-[#8f8f8f] font-mono uppercase tracking-wider">
+            <span className="text-[10px] text-[#a0a0a0] font-mono uppercase tracking-wider">
               Mitigations
             </span>
           </div>
         </div>
 
         {/* Legend / Category List */}
-        <div className="mt-4 space-y-2 border-t border-[#ebebeb] pt-4">
+        <div className="mt-4 space-y-2 border-t border-[#262626] pt-4">
           {chartData.map((item) => {
             const badgeMeta = getCategoryBadge(item.category);
             return (
@@ -118,13 +118,13 @@ export function ThreatBreakdownChart({ data }: ThreatBreakdownChartProps) {
                     className="w-2.5 h-2.5 rounded-sm shrink-0"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-[#4d4d4d] truncate font-medium">
+                  <span className="text-[#a0a0a0] truncate font-medium">
                     {badgeMeta.label}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 font-mono">
-                  <span className="text-[#171717]">{formatNumber(item.value)}</span>
-                  <span className="text-[#8f8f8f] w-8 text-right">
+                  <span className="text-[#ffffff]">{formatNumber(item.value)}</span>
+                  <span className="text-[#3ecf8e] w-8 text-right">
                     {item.percentage}%
                   </span>
                 </div>

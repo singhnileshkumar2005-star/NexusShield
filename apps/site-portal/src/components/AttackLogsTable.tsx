@@ -5,22 +5,19 @@ import { useSite } from '@/lib/site-context';
 import {
   Search,
   Download,
-  Filter,
   ShieldAlert,
-  ArrowUpDown,
   Plus,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
 } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { format } from 'date-fns';
 
 export function AttackLogsTable() {
-  const { attacks, selectedSite, quickAllowlistIp, refreshAll, addToast } = useSite();
+  const { attacks, selectedSite, quickAllowlistIp, addToast } = useSite();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedAction, setSelectedAction] = useState<string>('all');
+  const [selectedAction] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -105,26 +102,26 @@ export function AttackLogsTable() {
   const getCategoryBadge = (category: string) => {
     switch (category) {
       case 'brute_force':
-        return { label: 'Brute Force', class: 'bg-[#fafafa] text-[#171717] border-[#ebebeb]' };
+        return { label: 'Brute Force', class: 'bg-[#006239]/40 text-[#3ecf8e] border-[#3ecf8e]/30' };
       case 'sqli_xss':
-        return { label: 'SQLi / XSS', class: 'bg-[#171717] text-[#ffffff] border-[#171717]' };
+        return { label: 'SQLi / XSS', class: 'bg-[#bda4ff]/20 text-[#bda4ff] border-[#bda4ff]/30' };
       case 'honeypot_probe':
-        return { label: 'Honeypot Trap', class: 'bg-[#fafafa] text-[#171717] border-[#ebebeb]' };
+        return { label: 'Honeypot Trap', class: 'bg-[#006239]/40 text-[#3ecf8e] border-[#3ecf8e]/30' };
       case 'rate_abuse':
-        return { label: 'Rate Abuse', class: 'bg-[#fafafa] text-[#4d4d4d] border-[#ebebeb]' };
+        return { label: 'Rate Abuse', class: 'bg-[#141414] text-[#a0a0a0] border-[#2e2e2e]' };
       case 'scanner':
-        return { label: 'Scanner Probe', class: 'bg-[#fafafa] text-[#171717] border-[#ebebeb]' };
+        return { label: 'Scanner Probe', class: 'bg-[#006239]/40 text-[#3ecf8e] border-[#3ecf8e]/30' };
       case 'credential_stuffing':
-        return { label: 'Credential Stuffing', class: 'bg-[#171717] text-[#ffffff] border-[#171717]' };
+        return { label: 'Credential Stuffing', class: 'bg-[#bda4ff]/20 text-[#bda4ff] border-[#bda4ff]/30' };
       default:
-        return { label: category, class: 'bg-[#fafafa] text-[#4d4d4d] border-[#ebebeb]' };
+        return { label: category, class: 'bg-[#141414] text-[#a0a0a0] border-[#2e2e2e]' };
     }
   };
 
   return (
     <div className="space-y-4">
       {/* Search and Filters Bar */}
-      <div className="bg-[#ffffff] border border-[#ebebeb] rounded-lg p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-xl p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 shadow-card-subtle">
         {/* Left: Category pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
           {categories.map((cat) => (
@@ -134,10 +131,10 @@ export function AttackLogsTable() {
                 setSelectedCategory(cat.id);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                 selectedCategory === cat.id
-                  ? 'bg-[#171717] text-[#ffffff]'
-                  : 'bg-[#fafafa] hover:bg-[#ebebeb] text-[#4d4d4d] border border-[#ebebeb]'
+                  ? 'bg-[#3ecf8e] text-[#000000] font-semibold'
+                  : 'bg-[#141414] hover:bg-[#222222] text-[#a0a0a0] hover:text-[#ffffff] border border-[#2e2e2e]'
               }`}
             >
               {cat.label}
@@ -148,7 +145,7 @@ export function AttackLogsTable() {
         {/* Right: Search & Actions */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1 sm:w-64">
-            <Search className="w-3.5 h-3.5 text-[#8f8f8f] absolute left-3 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-[#525252] absolute left-3 top-2.5" />
             <input
               type="text"
               placeholder="Filter by IP, URL, or agent..."
@@ -157,28 +154,28 @@ export function AttackLogsTable() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full text-xs pl-8 pr-3 py-1.5 bg-[#fafafa] border border-[#ebebeb] rounded-full text-[#171717] placeholder-[#8f8f8f] focus:outline-none focus:border-[#171717] transition-colors"
+              className="w-full text-xs pl-8 pr-3 py-1.5 bg-[#141414] border border-[#2e2e2e] rounded-lg text-[#ffffff] placeholder-[#525252] focus:outline-none focus:border-[#3ecf8e] transition-colors font-mono"
             />
           </div>
 
           <button
             onClick={handleExportCsv}
-            className="px-3.5 py-1.5 bg-[#ffffff] hover:bg-[#fafafa] border border-[#ebebeb] rounded-full text-xs font-medium text-[#171717] transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-1.5 bg-[#141414] hover:bg-[#222222] border border-[#2e2e2e] rounded-lg text-xs font-medium text-[#ffffff] hover:text-[#3ecf8e] transition-colors flex items-center gap-1.5"
             title="Download CSV report"
           >
-            <Download className="w-3.5 h-3.5 text-[#171717]" />
+            <Download className="w-3.5 h-3.5 text-[#3ecf8e]" />
             <span className="hidden sm:inline">Export CSV</span>
           </button>
         </div>
       </div>
 
       {/* Main Table */}
-      <div className="bg-[#ffffff] border border-[#ebebeb] rounded-lg overflow-hidden">
+      <div className="bg-[#1a1a1a] border border-[#2e2e2e] rounded-xl overflow-hidden shadow-card-subtle">
         {filteredAttacks.length === 0 ? (
           <div className="p-10 text-center">
-            <ShieldAlert className="w-8 h-8 text-[#8f8f8f] mx-auto mb-2" />
-            <h4 className="text-xs font-semibold text-[#171717]">No attack logs match your criteria</h4>
-            <p className="text-xs text-[#8f8f8f] mt-1">
+            <ShieldAlert className="w-8 h-8 text-[#525252] mx-auto mb-2" />
+            <h4 className="text-xs font-semibold text-[#ffffff]">No attack logs match your criteria</h4>
+            <p className="text-xs text-[#a0a0a0] mt-1">
               Try adjusting your search query or threat category filter.
             </p>
           </div>
@@ -186,7 +183,7 @@ export function AttackLogsTable() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-[#fafafa] border-b border-[#ebebeb] text-[#8f8f8f] uppercase text-[10px] font-semibold tracking-wider">
+                <tr className="bg-[#141414] border-b border-[#262626] text-[#a0a0a0] uppercase text-[10px] font-semibold tracking-wider font-mono">
                   <th className="py-2.5 px-4">Attacker IP</th>
                   <th className="py-2.5 px-4">Category</th>
                   <th className="py-2.5 px-4">Target Endpoint</th>
@@ -196,7 +193,7 @@ export function AttackLogsTable() {
                   <th className="py-2.5 px-4 text-right">Allowlist</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#ebebeb]">
+              <tbody className="divide-y divide-[#262626]">
                 {paginatedAttacks.map((atk) => {
                   const badge = getCategoryBadge(atk.category);
                   let formattedDate = '';
@@ -207,9 +204,9 @@ export function AttackLogsTable() {
                   }
 
                   return (
-                    <tr key={atk.id} className="hover:bg-[#fafafa] transition-colors group">
+                    <tr key={atk.id} className="hover:bg-[#222222] transition-colors group">
                       {/* Attacker IP */}
-                      <td className="py-3 px-4 font-mono text-[#171717] font-medium whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono text-[#ffffff] font-medium whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           {atk.origin_geo?.flag && <span>{atk.origin_geo.flag}</span>}
                           <span>{atk.attacker_ip}</span>
@@ -219,35 +216,35 @@ export function AttackLogsTable() {
                       {/* Category Badge */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${badge.class}`}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${badge.class}`}
                         >
                           {badge.label}
                         </span>
                       </td>
 
                       {/* Target Endpoint */}
-                      <td className="py-3 px-4 font-mono text-[#4d4d4d] max-w-[220px] truncate">
-                        <span className="text-[10px] text-[#8f8f8f] mr-1 font-sans">
+                      <td className="py-3 px-4 font-mono text-[#a0a0a0] max-w-[220px] truncate">
+                        <span className="text-[10px] text-[#525252] mr-1 font-sans">
                           {atk.http_method}
                         </span>
                         <span title={atk.target_endpoint}>{atk.target_endpoint}</span>
                       </td>
 
                       {/* User Agent */}
-                      <td className="py-3 px-4 text-[#8f8f8f] font-mono text-[11px] max-w-[180px] truncate">
+                      <td className="py-3 px-4 text-[#a0a0a0] font-mono text-[11px] max-w-[180px] truncate">
                         <span title={atk.user_agent_excerpt}>{atk.user_agent_excerpt}</span>
                       </td>
 
                       {/* Action */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-[#fafafa] text-[#171717] border border-[#ebebeb]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#171717]" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-[#006239]/30 text-[#3ecf8e] border border-[#3ecf8e]/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#3ecf8e]" />
                           {atk.action}
                         </span>
                       </td>
 
                       {/* Timestamp */}
-                      <td className="py-3 px-4 text-[#8f8f8f] font-mono text-[11px] whitespace-nowrap">
+                      <td className="py-3 px-4 text-[#a0a0a0] font-mono text-[11px] whitespace-nowrap">
                         {formattedDate}
                       </td>
 
@@ -260,10 +257,10 @@ export function AttackLogsTable() {
                               `Allowlisted from attack log (${atk.category})`
                             )
                           }
-                          className="opacity-75 group-hover:opacity-100 px-2.5 py-1 text-[11px] font-medium bg-[#ffffff] hover:bg-[#fafafa] text-[#171717] border border-[#ebebeb] rounded-full transition-all inline-flex items-center gap-1"
+                          className="opacity-75 group-hover:opacity-100 px-2.5 py-1 text-[11px] font-medium bg-[#141414] hover:bg-[#222222] text-[#ffffff] hover:text-[#3ecf8e] border border-[#2e2e2e] rounded-md transition-all inline-flex items-center gap-1"
                           title="Exempt IP from future blocks"
                         >
-                          <Plus className="w-3 h-3 text-[#171717]" />
+                          <Plus className="w-3 h-3 text-[#3ecf8e]" />
                           <span>Allowlist</span>
                         </button>
                       </td>
@@ -277,40 +274,40 @@ export function AttackLogsTable() {
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-3 bg-[#fafafa] border-t border-[#ebebeb] flex items-center justify-between text-xs text-[#8f8f8f]">
+          <div className="p-3 bg-[#141414] border-t border-[#262626] flex items-center justify-between text-xs text-[#a0a0a0]">
             <div>
               Showing{' '}
-              <strong className="text-[#171717]">
+              <strong className="text-[#ffffff]">
                 {(currentPage - 1) * itemsPerPage + 1}
               </strong>{' '}
               to{' '}
-              <strong className="text-[#171717]">
+              <strong className="text-[#ffffff]">
                 {Math.min(currentPage * itemsPerPage, filteredAttacks.length)}
               </strong>{' '}
-              of <strong className="text-[#171717]">{filteredAttacks.length}</strong> events
+              of <strong className="text-[#ffffff]">{filteredAttacks.length}</strong> events
             </div>
 
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-1 rounded-md border border-[#ebebeb] bg-[#ffffff] hover:bg-[#fafafa] disabled:opacity-40 transition-colors"
+                className="p-1 rounded-md border border-[#2e2e2e] bg-[#1a1a1a] hover:bg-[#222222] disabled:opacity-40 transition-colors"
                 aria-label="Previous page"
               >
-                <ChevronLeft className="w-4 h-4 text-[#171717]" />
+                <ChevronLeft className="w-4 h-4 text-[#ffffff]" />
               </button>
 
-              <span className="px-2 font-mono text-[#171717]">
+              <span className="px-2 font-mono text-[#3ecf8e]">
                 {currentPage} / {totalPages}
               </span>
 
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="p-1 rounded-md border border-[#ebebeb] bg-[#ffffff] hover:bg-[#fafafa] disabled:opacity-40 transition-colors"
+                className="p-1 rounded-md border border-[#2e2e2e] bg-[#1a1a1a] hover:bg-[#222222] disabled:opacity-40 transition-colors"
                 aria-label="Next page"
               >
-                <ChevronRight className="w-4 h-4 text-[#171717]" />
+                <ChevronRight className="w-4 h-4 text-[#ffffff]" />
               </button>
             </div>
           </div>

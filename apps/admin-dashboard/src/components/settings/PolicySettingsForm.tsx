@@ -3,22 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Sliders,
-  Shield,
-  Clock,
-  Radio,
   Server,
   Download,
-  AlertTriangle,
   Check,
   Save,
   Lock,
-  Zap,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { Badge } from '../ui/Badge';
 import { PolicySettings } from '@/lib/types';
 import { HubApi } from '@/lib/api';
 
@@ -99,7 +93,7 @@ export function PolicySettingsForm() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-[#171717]" />
+              <Sliders className="w-4 h-4 text-[#3ecf8e]" />
               <CardTitle>Autonomous Defense & Corroboration Policy</CardTitle>
             </div>
             <CardDescription>
@@ -111,9 +105,9 @@ export function PolicySettingsForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Corroboration Threshold */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-[#171717] flex items-center justify-between">
+                <label className="text-xs font-medium text-[#ffffff] flex items-center justify-between">
                   <span>Corroboration Threshold</span>
-                  <span className="font-mono text-[#4d4d4d]">
+                  <span className="font-mono text-[#3ecf8e]">
                     {settings.corroborationThreshold} {settings.corroborationThreshold === 1 ? 'Site' : 'Independent Sites'}
                   </span>
                 </label>
@@ -131,16 +125,16 @@ export function PolicySettingsForm() {
                   <option value="3">3 Independent Members (High Strictness)</option>
                   <option value="4">4 Independent Members (Enterprise)</option>
                 </Select>
-                <p className="text-[11px] text-[#8f8f8f]">
+                <p className="text-[11px] text-[#a0a0a0]">
                   Requires distinct member node reports before escalating to a universal block rule.
                 </p>
               </div>
 
               {/* Confidence Requirement */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-[#171717] flex items-center justify-between">
+                <label className="text-xs font-medium text-[#ffffff] flex items-center justify-between">
                   <span>Minimum Confidence Score</span>
-                  <span className="font-mono text-[#4d4d4d]">
+                  <span className="font-mono text-[#3ecf8e]">
                     {Math.round(settings.minConfidence * 100)}%
                   </span>
                 </label>
@@ -158,18 +152,18 @@ export function PolicySettingsForm() {
                   <option value="0.90">0.90 (Recommended)</option>
                   <option value="0.95">0.95 (Strict / High Certainty Only)</option>
                 </Select>
-                <p className="text-[11px] text-[#8f8f8f]">
+                <p className="text-[11px] text-[#a0a0a0]">
                   WAF signature or pattern certainty required to qualify for network ingestion.
                 </p>
               </div>
             </div>
 
             {/* Default TTL */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3 border-t border-[#ebebeb]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3 border-t border-[#262626]">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-[#171717] flex items-center justify-between">
+                <label className="text-xs font-medium text-[#ffffff] flex items-center justify-between">
                   <span>Default Block TTL (Self-Healing Expiry)</span>
-                  <span className="font-mono text-[#4d4d4d]">{settings.defaultTtlHours} Hours</span>
+                  <span className="font-mono text-[#3ecf8e]">{settings.defaultTtlHours} Hours</span>
                 </label>
                 <Select
                   value={settings.defaultTtlHours.toString()}
@@ -185,16 +179,16 @@ export function PolicySettingsForm() {
                   <option value="72">72 Hours (Standard)</option>
                   <option value="168">7 Days (Persistent botnets)</option>
                 </Select>
-                <p className="text-[11px] text-[#8f8f8f]">
+                <p className="text-[11px] text-[#a0a0a0]">
                   Blocks automatically self-expire to avoid stale rules accumulating permanently.
                 </p>
               </div>
 
               {/* Rate Limit Sensitiviy */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-[#171717] flex items-center justify-between">
+                <label className="text-xs font-medium text-[#ffffff] flex items-center justify-between">
                   <span>Rate Abuse Burst Threshold</span>
-                  <span className="font-mono text-[#4d4d4d]">
+                  <span className="font-mono text-[#3ecf8e]">
                     {settings.rateLimitThreshold} req / min
                   </span>
                 </label>
@@ -211,7 +205,7 @@ export function PolicySettingsForm() {
                   <option value="120">120 req / min (Standard)</option>
                   <option value="240">240 req / min (High Traffic)</option>
                 </Select>
-                <p className="text-[11px] text-[#8f8f8f]">
+                <p className="text-[11px] text-[#a0a0a0]">
                   Trigger threshold for flagging automated burst crawlers and mini-DDoS attacks.
                 </p>
               </div>
@@ -223,7 +217,7 @@ export function PolicySettingsForm() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-[#171717]" />
+              <Server className="w-4 h-4 text-[#3ecf8e]" />
               <CardTitle>Coordinator Hub Connectivity</CardTitle>
             </div>
             <CardDescription>
@@ -233,7 +227,7 @@ export function PolicySettingsForm() {
 
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-[#171717]">
+              <label className="text-xs font-medium text-[#ffffff]">
                 Coordinator API Endpoint
               </label>
               <Input
@@ -245,18 +239,18 @@ export function PolicySettingsForm() {
                 className="font-mono"
                 required
               />
-              <p className="text-[11px] text-[#8f8f8f]">
+              <p className="text-[11px] text-[#a0a0a0]">
                 All member agents poll or subscribe to SSE from this coordinator instance.
               </p>
             </div>
 
-            <div className="p-3 bg-[#fafafa] border border-[#ebebeb] rounded-lg text-xs flex items-start gap-2.5">
-              <Lock className="w-4 h-4 text-[#171717] shrink-0 mt-0.5" />
+            <div className="p-3 bg-[#141414] border border-[#2e2e2e] rounded-xl text-xs flex items-start gap-2.5">
+              <Lock className="w-4 h-4 text-[#3ecf8e] shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <span className="font-semibold text-[#171717]">
+                <span className="font-semibold text-[#ffffff]">
                   Victim Anonymity Protocol: Active
                 </span>
-                <p className="text-[#8f8f8f] leading-relaxed">
+                <p className="text-[#a0a0a0] leading-relaxed">
                   No internal hostnames, requested paths, cookies, or payload content are ever
                   forwarded beyond the reporting node.
                 </p>
@@ -269,7 +263,7 @@ export function PolicySettingsForm() {
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2">
             {savedSuccess && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-[#166534] bg-[#f0fdf4] px-3 py-1.5 rounded-full border border-[#bbf7d0] animate-fade-in">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-[#3ecf8e] bg-[#006239]/40 px-3 py-1.5 rounded-lg border border-[#3ecf8e]/30 animate-fade-in">
                 <Check className="w-3.5 h-3.5" />
                 Policies Saved & Distributed
               </span>
@@ -281,7 +275,7 @@ export function PolicySettingsForm() {
             size="lg"
             type="submit"
             loading={isSaving}
-            icon={<Save className="w-4 h-4" />}
+            icon={<Save className="w-4 h-4 text-[#000000]" />}
           >
             Save Policy Configurations
           </Button>
@@ -293,11 +287,11 @@ export function PolicySettingsForm() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Download className="w-4 h-4 text-[#171717]" />
+              <Download className="w-4 h-4 text-[#3ecf8e]" />
               <CardTitle>Export Threat Intelligence</CardTitle>
             </div>
             {exportMessage && (
-              <span className="text-xs font-mono text-[#166534] bg-[#f0fdf4] px-2.5 py-1 rounded border border-[#bbf7d0]">
+              <span className="text-xs font-mono text-[#3ecf8e] bg-[#006239]/40 px-2.5 py-1 rounded border border-[#3ecf8e]/30">
                 {exportMessage}
               </span>
             )}
@@ -307,14 +301,14 @@ export function PolicySettingsForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-between">
-          <div className="text-xs text-[#8f8f8f]">
+          <div className="text-xs text-[#a0a0a0]">
             Compatible with Splunk, Elastic Security, AWS GuardDuty, CrowdStrike, and fail2ban.
           </div>
           <Button
             variant="secondary"
             size="md"
             onClick={handleExportIntel}
-            icon={<Download className="w-4 h-4 text-[#171717]" />}
+            icon={<Download className="w-4 h-4 text-[#ffffff]" />}
           >
             Export STIX 2.1 Feed
           </Button>

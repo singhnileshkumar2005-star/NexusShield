@@ -18,13 +18,13 @@ export function Badge({
   ...props
 }: BadgeProps) {
   const variants = {
-    default: 'bg-[#fafafa] text-[#171717] border border-[#ebebeb]',
-    outline: 'bg-transparent text-[#4d4d4d] border border-[#ebebeb]',
-    black: 'bg-[#171717] text-[#ffffff] border border-[#171717]',
-    secondary: 'bg-[#f5f5f5] text-[#4d4d4d] border border-transparent',
-    success: 'bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]',
-    danger: 'bg-[#fef2f2] text-[#991b1b] border border-[#fecaca]',
-    warning: 'bg-[#fffbeb] text-[#92400e] border border-[#fde68a]',
+    default: 'bg-[#141414] text-[#ffffff] border border-[#2e2e2e]',
+    outline: 'bg-transparent text-[#a0a0a0] border border-[#2e2e2e]',
+    black: 'bg-[#006239] text-[#3ecf8e] border border-[#3ecf8e]/40',
+    secondary: 'bg-[#1a1a1a] text-[#a0a0a0] border border-[#262626]',
+    success: 'bg-[#006239]/40 text-[#3ecf8e] border border-[#3ecf8e]/30',
+    danger: 'bg-red-950/40 text-red-400 border border-red-800/40',
+    warning: 'bg-amber-950/40 text-amber-400 border border-amber-800/40',
   };
 
   const sizes = {
@@ -35,7 +35,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full transition-colors select-none font-mono tracking-tight',
+        'inline-flex items-center gap-1.5 rounded-lg transition-colors select-none font-mono tracking-tight',
         variants[variant],
         sizes[size],
         className
@@ -44,8 +44,8 @@ export function Badge({
     >
       {pulse && (
         <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3ecf8e] opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#3ecf8e]" />
         </span>
       )}
       {children}

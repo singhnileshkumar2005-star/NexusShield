@@ -3,21 +3,17 @@
 import React, { useState, useMemo } from 'react';
 import {
   Search,
-  Filter,
-  ShieldX,
   Trash2,
   Clock,
   CheckCircle2,
-  AlertTriangle,
-  Info,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { BlocklistEntry, ThreatCategory } from '@/lib/types';
-import { getCategoryBadge, formatTtlRemaining, formatRelativeTime } from '@/lib/utils';
+import { BlocklistEntry } from '@/lib/types';
+import { getCategoryBadge, formatTtlRemaining } from '@/lib/utils';
 
 interface BlocklistTableProps {
   entries: BlocklistEntry[];
@@ -28,7 +24,6 @@ interface BlocklistTableProps {
 export function BlocklistTable({
   entries,
   onRevokeBlock,
-  onSelectEntry,
 }: BlocklistTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -57,7 +52,7 @@ export function BlocklistTable({
   };
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col shadow-card-subtle">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -102,7 +97,7 @@ export function BlocklistTable({
       <CardContent className="p-0 overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-[#ebebeb] bg-[#fafafa] text-[#8f8f8f] font-mono">
+            <tr className="border-b border-[#262626] bg-[#141414] text-[#a0a0a0] font-mono">
               <th className="py-3 px-4 font-medium">Attacker IP</th>
               <th className="py-3 px-4 font-medium">Threat Category</th>
               <th className="py-3 px-4 font-medium">Confidence</th>
@@ -112,10 +107,10 @@ export function BlocklistTable({
               <th className="py-3 px-4 font-medium text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#ebebeb]">
+          <tbody className="divide-y divide-[#262626]">
             {filteredEntries.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-[#8f8f8f]">
+                <td colSpan={7} className="py-12 text-center text-[#a0a0a0]">
                   No active blocked IPs match your filter criteria.
                 </td>
               </tr>
@@ -128,12 +123,12 @@ export function BlocklistTable({
                 return (
                   <tr
                     key={entry.id}
-                    className="hover:bg-[#fafafa] transition-colors group"
+                    className="hover:bg-[#222222] transition-colors group"
                   >
                     {/* IP */}
-                    <td className="py-3.5 px-4 font-mono font-semibold text-[#171717]">
+                    <td className="py-3.5 px-4 font-mono font-semibold text-[#ffffff]">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#171717]" />
+                        <span className="w-2 h-2 rounded-full bg-[#3ecf8e]" />
                         <span>{entry.attackerIp}</span>
                       </div>
                     </td>
@@ -141,7 +136,7 @@ export function BlocklistTable({
                     {/* Category */}
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono border ${categoryMeta.badgeClass}`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-mono border ${categoryMeta.badgeClass}`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${categoryMeta.dotColor}`} />
                         {categoryMeta.label}
@@ -151,13 +146,13 @@ export function BlocklistTable({
                     {/* Confidence Meter */}
                     <td className="py-3.5 px-4 font-mono">
                       <div className="flex items-center gap-2">
-                        <div className="w-20 h-1.5 rounded-full bg-[#ebebeb] overflow-hidden">
+                        <div className="w-20 h-1.5 rounded-full bg-[#141414] border border-[#2e2e2e] overflow-hidden">
                           <div
-                            className="h-full bg-[#171717] rounded-full"
+                            className="h-full bg-[#3ecf8e] rounded-full"
                             style={{ width: `${confidencePct}%` }}
                           />
                         </div>
-                        <span className="text-[#171717] font-medium">
+                        <span className="text-[#3ecf8e] font-medium">
                           {confidencePct}%
                         </span>
                       </div>
@@ -165,22 +160,22 @@ export function BlocklistTable({
 
                     {/* Corroboration */}
                     <td className="py-3.5 px-4 font-mono">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#fafafa] border border-[#ebebeb] text-[11px] text-[#171717]">
-                        <CheckCircle2 className="w-3 h-3 text-[#166534]" />
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#141414] border border-[#2e2e2e] text-[11px] text-[#ffffff]">
+                        <CheckCircle2 className="w-3 h-3 text-[#3ecf8e]" />
                         {entry.corroborationCount} {entry.corroborationCount === 1 ? 'node' : 'nodes'}
                       </span>
                     </td>
 
                     {/* TTL */}
                     <td className="py-3.5 px-4 font-mono">
-                      <span className="inline-flex items-center gap-1 text-[11px] text-[#4d4d4d]">
-                        <Clock className="w-3 h-3 text-[#8f8f8f]" />
+                      <span className="inline-flex items-center gap-1 text-[11px] text-[#a0a0a0]">
+                        <Clock className="w-3 h-3 text-[#525252]" />
                         {ttl.text}
                       </span>
                     </td>
 
                     {/* Notes */}
-                    <td className="py-3.5 px-4 max-w-xs truncate text-[#8f8f8f]">
+                    <td className="py-3.5 px-4 max-w-xs truncate text-[#a0a0a0]">
                       {entry.notes || 'Automated multi-node detection'}
                     </td>
 
@@ -191,7 +186,7 @@ export function BlocklistTable({
                         size="sm"
                         onClick={() => handleRevoke(entry.attackerIp)}
                         loading={revokingIp === entry.attackerIp}
-                        className="text-[#991b1b] hover:text-[#7f1d1d] hover:bg-[#fef2f2] hover:border-[#fecaca]"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-950/40 hover:border-red-800/40"
                         icon={<Trash2 className="w-3.5 h-3.5" />}
                       >
                         Revoke Block

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, ShieldCheck, Star, Activity, Server } from 'lucide-react';
+import { Plus, ShieldCheck, Star, Server } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/StatCard';
@@ -17,8 +17,12 @@ export default function MembersPage() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
   const loadMembers = async () => {
-    const data = await HubApi.getMembers();
-    if (data) setMembers(data);
+    try {
+      const data = await HubApi.getMembers();
+      if (data && data.length > 0) setMembers(data);
+    } catch {
+      // fallback
+    }
   };
 
   useEffect(() => {
@@ -49,10 +53,10 @@ export default function MembersPage() {
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#171717]">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#ffffff] font-display">
             Member Fleet & Reputation
           </h2>
-          <p className="text-xs sm:text-sm text-[#4d4d4d] mt-1">
+          <p className="text-xs sm:text-sm text-[#a0a0a0] mt-1">
             Directory of registered member websites participating in collaborative defense and threat sharing.
           </p>
         </div>
@@ -62,7 +66,7 @@ export default function MembersPage() {
             variant="primary"
             size="md"
             onClick={() => setIsRegisterOpen(true)}
-            icon={<Plus className="w-4 h-4" />}
+            icon={<Plus className="w-4 h-4 text-[#000000]" />}
           >
             Register New Member Site
           </Button>
@@ -75,7 +79,7 @@ export default function MembersPage() {
           title="Active Member Nodes"
           value={`${onlineCount} / ${members.length}`}
           description="Transmitting live telemetry"
-          icon={<Server className="w-4 h-4 text-[#171717]" />}
+          icon={<Server className="w-4 h-4 text-[#3ecf8e]" />}
           badge={
             <Badge variant="success" size="sm" pulse>
               Live
@@ -86,14 +90,14 @@ export default function MembersPage() {
           title="Fleet Average Reputation"
           value={`${avgReputation} / 5.0`}
           description="High trust consensus score"
-          icon={<Star className="w-4 h-4 text-[#171717]" />}
+          icon={<Star className="w-4 h-4 text-[#3ecf8e]" />}
           trend={{ value: 'Consensus verified', isPositive: true }}
         />
         <StatCard
           title="Fleet Mitigations"
           value={formatNumber(totalFleetMitigations)}
           description="Neutralized at edge perimeters"
-          icon={<ShieldCheck className="w-4 h-4 text-[#171717]" />}
+          icon={<ShieldCheck className="w-4 h-4 text-[#3ecf8e]" />}
           trend={{ value: '+14% network effect', isPositive: true }}
         />
       </div>

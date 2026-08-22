@@ -27,19 +27,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium rounded-full transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#171717] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-[0.98]';
+      'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3ecf8e] focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-[0.98]';
 
     const variants = {
       primary:
-        'bg-[#000000] text-[#ffffff] hover:bg-[#262626] border border-transparent shadow-none',
+        'bg-[#3ecf8e] text-[#000000] font-semibold hover:bg-[#3fcf8e] border border-transparent shadow-sm',
       secondary:
-        'bg-[#ffffff] text-[#171717] hover:bg-[#fafafa] border border-[#ebebeb] hover:border-[#cccccc]',
+        'bg-[#1a1a1a] text-[#ffffff] hover:bg-[#222222] border border-[#2e2e2e] hover:border-[#3ecf8e]/40',
       outline:
-        'bg-transparent text-[#171717] hover:bg-[#f5f5f5] border border-[#ebebeb]',
+        'bg-transparent text-[#ffffff] hover:bg-[#1a1a1a] border border-[#2e2e2e]',
       ghost:
-        'bg-transparent text-[#4d4d4d] hover:text-[#171717] hover:bg-[#f5f5f5] border border-transparent',
+        'bg-transparent text-[#a0a0a0] hover:text-[#ffffff] hover:bg-[#1a1a1a] border border-transparent',
       danger:
-        'bg-[#171717] text-[#ffffff] hover:bg-[#dc2626] border border-transparent',
+        'bg-red-950/60 text-red-400 hover:bg-red-900 border border-red-800/40',
     };
 
     const sizes = {
